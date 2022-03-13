@@ -1,0 +1,25 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netcoreapp3.1</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="Types\CoordTypes.fs" />
+    <Compile Include="Types\ColourTypes.fs" />
+    <Compile Include="Types\TriangleMeshTypes.fs" />
+    <Compile Include="Types\TectonicTypes.fs" />
+    <Compile Include="Types\SphereMeshTypes.fs" />
+    <Compile Include="Types\TriangleTypes.fs" />
+    <Compile Include="Implementation\CoordFunctions.fs" />
+    <Compile Include="Implementation\TriangleMeshFunctions.fs" />
+    <Compile Include="Implementation\TectonicFunctions.fs" />
+    <Compile Include="Implementation\SphereMeshFunctions.fs" />
+    <Compile Include="View\TriangleMeshViewFunctions.fs" />
+    <Compile Include="View\TectonicViewFunctions.fs" />
+    <Compile Include="Interface\AtlasStateTypes.fs" />
+    <Compile Include="Interface\AtlasIO.fs" />
+    <Compile Include="Interface\AtlasState.fs" />
+  </ItemGroup>
+
+</Project>

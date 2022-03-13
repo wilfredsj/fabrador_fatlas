@@ -1,0 +1,25 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>netcoreapp3.1</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="GLL.fs" />
+    <Compile Include="RenderTypes.fs" />
+    <Compile Include="HexaHelpers.fs" />
+    <Compile Include="RenderFunctions.fs" />
+    <Compile Include="ElmRender.fs" />
+    <Compile Include="Program.fs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="OpenTK" Version="4.6.7" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\FAtlas21Core\FAtlas21Core.fsproj" />
+  </ItemGroup>
+
+</Project>
