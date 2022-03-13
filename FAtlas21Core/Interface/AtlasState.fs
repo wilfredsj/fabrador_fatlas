@@ -11,19 +11,13 @@ open ColourTypes
 open TectonicTypes
 open TectonicViewFunctions
 open AtlasIO
+open AtlasStateTypes
 
 module Interface =
   let rng = System.Random(1338)
 
   type RenderMode = 
   | BasicCoordinate
-
-  type Message =
-  | NoOp
-  | Divide of int
-  | NewRenderMode of RenderMode
-  | ClusterInit of int option
-  | ClusterIterate of int
 
   type ModelState =
   | Init
@@ -213,8 +207,10 @@ module Interface =
 
   let mutable keypress = { chars = "" }
 
-  let onkeyPress ch = 
+  let onkeyPress state ch = 
     let (kp', msg) = addToMessage keypress ch
     keypress <- kp'
-    updateModel 
+    match msg with
+    | None -> state
+    | Some m2 -> updateModel state m2
 

@@ -11,6 +11,7 @@
     <Compile Include="HexaHelpers.fs" />
     <Compile Include="RenderFunctions.fs" />
     <Compile Include="ElmRender.fs" />
+    <Compile Include="ElmConstructor.fs" />
     <Compile Include="Program.fs" />
   </ItemGroup>
 

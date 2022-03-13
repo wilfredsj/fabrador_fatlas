@@ -13,16 +13,19 @@ open FAtlas.CoordTypes
 open FAtlas.TectonicFunctions
 
 open FAtlas.Interface
+open FAtlas.AtlasStateTypes
+
+open ElmConstructor
 
 let testData = hexAsPrimitive [{ row = 0; dicol = 0; z = 1.0f}; { row = 0; dicol = 1; z= 0.8f}; { row = 1; dicol = 0; z= 1.2f}]
 
-let atlasCallback (w : ElmLikeWindow) = { makeVertex = Vector3; makeColour = Vector3; onUpdateCallback = w.changeVerticesTuples }
+let atlasCallback updateVertices = { makeVertex = Vector3; makeColour = Vector3; onUpdateCallback = updateVertices }
 
-
-type ElmHandler = {
-  state : AtlasState<Vector3, Vector3>;
-  messages : Message list
-}
+let adaptedMsg s m =
+  match m with
+  | DirectMessage m1 -> updateModel s m1
+  | KeyDown ch -> onkeyPress s ch
+  | EventNoOp -> s
 
 [<EntryPoint>]
 let main argv =
@@ -35,26 +38,17 @@ let main argv =
 
   let x1 = PrimitiveType.Parse(typedefof<PrimitiveType>, "Lines") :?> PrimitiveType
 
-  let nws = NativeWindowSettings()
-  nws.Size <- Vector2i(600, 800)
-  nws.Title <- "Sandbox"
-  let window = new ElmLikeWindow(gws, nws, None)
-  window.changeVertices testData 
-  let callback = atlasCallback window
-  let atlas = initState callback
-
-  let initScript = [NoOp; Divide 4; ClusterInit None; ClusterIterate 5000]
-  let m' = updateModelWithScript atlas initScript
-  do window.Run()
+  let initScript = [NoOp; Divide 4; ClusterInit None; ClusterIterate 5000] 
+  createElmWindow initState atlasCallback adaptedMsg initScript
 
   // Fixed :  Why fail when ClusterIterate 50?
   // Fixed : If vertex added to 1 cluster, needs to be removed from border of other clusters
   // Fixed : If x-times in border, auto-add?
   // Fixed : Which clusters touch other clusters?
   // Fixed : Terminal condition ?
+  // Fixed : Keyboard callback to Atlas
 
   // TODO:
-  // Keyboard callback to Atlas
   // Decouple Render modesl
   
 

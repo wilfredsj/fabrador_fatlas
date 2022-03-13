@@ -21,10 +21,13 @@ let testData2 = hexAsPrimitive [{ row = 0; dicol = 0; z = 0.5f}; { row = 0; dico
 type PassedEvent<'Msg> =
   | KeyDown of char
   | DirectMessage of 'Msg
+  | EventNoOp
 
-type KeyPressCB = { partialCallback : char -> unit; finalize : unit -> unit }
+let direct m = DirectMessage m
 
-type ElmLikeWindow(gws, nws, primOveride) =
+type UpdateCallback<'Msg,'Model> = 'Model -> PassedEvent<'Msg> -> 'Model
+
+type ElmLikeWindow<'Msg,'StateModel>(gws, nws, primOveride, updater : UpdateCallback<'Msg,'StateModel>) =
   inherit GameWindow(gws, nws)
 
   let primOvd : PrimitiveGLData Option = primOveride
@@ -89,19 +92,25 @@ void main(void)
       vaoHandleOpt = [] }
 
 
-  let mutable model : RenderModel = initModel 0.75f
+  let mutable renderModel : RenderModel = initModel 0.75f
+  let mutable stateModel : 'StateModel option = None
 
-  let mutable keyCallback : KeyPressCB option = None
+
+  let generalCallback = updater
+  
+  member o.overrideState newState =
+    stateModel <- Some newState
+    ()
 
   member o.changeVerticesTuples data = 
 
-    model.primitives |> List.iter unbindPrimitive
+    renderModel.primitives |> List.iter unbindPrimitive
 
     o.VSync <- OpenTK.Windowing.Common.VSyncMode.On
 
     let glH = bindPrimitiveTuples data
-    let vaoH = List.map (bindIntoVAO model.shader) glH
-    model <- { model with primitives = glH; vaoHandleOpt = vaoH }
+    let vaoH = List.map (bindIntoVAO renderModel.shader) glH
+    renderModel <- { renderModel with primitives = glH; vaoHandleOpt = vaoH }
 
     GLL.Enable(EnableCap.DepthTest)
     GL.ClearColor(System.Drawing.Color.MidnightBlue)
@@ -109,13 +118,13 @@ void main(void)
 
   member o.changeVertices (data : PrimitiveGLData) =
 
-    model.primitives |> List.iter unbindPrimitive
+    renderModel.primitives |> List.iter unbindPrimitive
 
     o.VSync <- OpenTK.Windowing.Common.VSyncMode.On
 
     let glH = bindPrimitiveData data
-    let vaoH = bindIntoVAO model.shader glH
-    model <- { model with primitives = [glH]; vaoHandleOpt = [vaoH] }
+    let vaoH = bindIntoVAO renderModel.shader glH
+    renderModel <- { renderModel with primitives = [glH]; vaoHandleOpt = [vaoH] }
 
     GLL.Enable(EnableCap.DepthTest)
     GL.ClearColor(System.Drawing.Color.MidnightBlue)
@@ -139,7 +148,7 @@ void main(void)
 
   override o.OnUpdateFrame e =
     let newMVM = 
-      model.modelviewMatrixOpt
+      renderModel.modelviewMatrixOpt
       |> Option.map(fun (modelviewMatrixLocation, modelviewMatrix) -> 
         let rotation = Matrix4.CreateRotationZ(float32 e.Time  |> fun x -> x * -0.25f)
         let rotated = Matrix4.Mult(rotation, modelviewMatrix)
@@ -147,7 +156,7 @@ void main(void)
         (modelviewMatrixLocation, rotated)
       )
     let newLS =
-      model.lightSourceOpt
+      renderModel.lightSourceOpt
       |> Option.map(fun (lightSourceLoc, lightSource) -> 
         let rotation = Matrix3.CreateRotationX(float32 e.Time |> fun x -> x * 0.0f)
         let rq = Quaternion.FromMatrix(rotation)
@@ -155,7 +164,7 @@ void main(void)
         GL.Uniform3(lightSourceLoc, ref rotated)
         (lightSourceLoc, rotated)
       )
-    model <- { model with modelviewMatrixOpt = newMVM; lightSourceOpt = newLS }
+    renderModel <- { renderModel with modelviewMatrixOpt = newMVM; lightSourceOpt = newLS }
 
   override o.OnKeyDown e =
     let charOpt = 
@@ -188,20 +197,20 @@ void main(void)
       | Keys.Z -> Some 'z'
       | _ -> None
 
-    keyCallback
-    |> Option.iter(fun kb -> 
-      
-      match e.Key with
-      | Keys.Enter -> kb.finalize()
-      | _ ->
-        charOpt |> Option.iter(kb.partialCallback))
+    let msg = charOpt |> Option.map(KeyDown) |> Option.defaultValue EventNoOp
+
+    stateModel
+    |> Option.iter(fun s ->
+      let s' = generalCallback s msg
+      stateModel <- Some s')
+    
 
 
   override o.OnRenderFrame e =
     GL.Viewport(0, 0, o.Size.X, o.Size.Y)
     GL.Clear(ClearBufferMask.ColorBufferBit ||| ClearBufferMask.DepthBufferBit)
 
-    model.vaoHandleOpt 
+    renderModel.vaoHandleOpt 
     |> List.iter(fun vaoHandle ->
         let gl = vaoHandle.prim
         GL.BindVertexArray(vaoHandle.vaoHandle)
@@ -209,12 +218,3 @@ void main(void)
             DrawElementsType.UnsignedInt, IntPtr.Zero))
 
     base.SwapBuffers()
-
-let createElmWindow (model : 'Model) (updater : PassedEvent<'Msg> -> 'Model) (queue : 'Msg list) = 
-  
-  let gws = GameWindowSettings()
-  let nws = NativeWindowSettings()
-  nws.Size <- Vector2i(600, 800)
-  nws.Title <- "Sandbox"
-  let window = new ElmLikeWindow(gws, nws, None)
-  window
