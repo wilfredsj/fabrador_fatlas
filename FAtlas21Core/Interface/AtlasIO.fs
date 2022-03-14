@@ -8,6 +8,9 @@ module AtlasIO =
   let partialMessage str =
     match str with
     | "q" -> Some <| NewRenderMode BasicCoordinate
+    | "z" -> IcosaView GrayScale       |> NewRenderMode |> Some
+    | "x" -> IcosaView TectonicColours |> NewRenderMode |> Some
+    | "c" -> ClusterView TectonicColours |> NewRenderMode |> Some
     | "d" -> Some <| Divide 1
     | _ -> None
 

@@ -36,6 +36,15 @@ module TectonicTypes =
     connections : ((int*VertexUrl)*(int*VertexUrl)) list;
     connectedFaces : Set<int*int>
   }
+
+  type ClusterDataForRendering<'Key when 'Key : comparison>  = { meshData : TriangleSet<BasicPoint>; membership : Map<'Key, int>; numClusters : int}
+
+  let renderCAS (cas : ClusterAssigmentState<'A>)= {
+    meshData = cas.meshData; membership = cas.lookupFromKey; numClusters = cas.unfinishedClusters |> Array.length
+  }
+  let renderCCS (cas : CompleteClusterAssignment<'A>)= {
+    meshData = cas.meshData; membership = cas.lookupFromKey; numClusters = cas.allClusters |> Array.length
+  }
   
   let finishedAssigment u = Array.isEmpty u.unfinishedClusters
 
