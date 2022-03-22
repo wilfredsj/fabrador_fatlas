@@ -47,6 +47,11 @@ module TriangleMeshTypes =
   | OE_CB
   | OE_AC
   
+  // The 'U' in URL stands for Unique
+  // These are not-unique unless there's some normalization in the construction
+  // ... there's actually a function `normalizeElement` which does this.
+  // ... which is used by `getVertexNeighbours` 
+  // Whether unique or not, can be thought of as O(1) pointer to a vertex
   type VertexUrl = { t : int; i : int; j : int }
   type EdgeData = { duplicateEdges : (int*OrientedEdge) list; canonical : (int*OrientedEdge)}  
   type VertexData = { facesTouched : (int*OrientedVertex) list; canonical : (int*OrientedVertex) }

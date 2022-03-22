@@ -101,6 +101,16 @@ module Interface =
     state.callbacks.onUpdateCallback [concat3 "Triangles" elts]
     newCache 
 
+  let solidViewMercator state = 
+    
+    let pointMaker (lat,long) = { latitude = lat; longitude = long } |> cartFromSphereWithRadius 1.0
+    let pm' = pointMaker >> cartToExternal state.callbacks.makeVertex
+
+    let colourMaker (lat,long) = rangeToFullSat 0.0 6.0 long |> makeRGB|> state.callbacks.makeColour
+    let viewData = MercatorViewFunctions.createSolid pm' colourMaker 21 21
+    state.callbacks.onUpdateCallback [viewData]
+    ()
+
   let solidAndWireViewIcosaSection wireColourer state (ccs : CompleteClusterAssignment<'A>) =
     let ts = ccs.meshData
     let (wires'', newCache) =
@@ -124,16 +134,19 @@ module Interface =
     | Init 
     | IcosaDivision _ ->
       match state.render with
+      | MercatorView -> MercatorView
       | _ -> IcosaView GrayScale
     | ClusterAssignment _ ->
       match state.render with
       | IcosaView GrayScale -> IcosaView GrayScale
       | IcosaView TectonicColours -> IcosaView TectonicColours
+      | MercatorView -> MercatorView
       | _ -> IcosaView TectonicColours
     | ClusterFinished _ ->
       match state.render with
       | IcosaView GrayScale -> IcosaView GrayScale
       | IcosaView TectonicColours -> IcosaView TectonicColours
+      | MercatorView -> MercatorView
       | _ -> ClusterView TectonicColours
 
   let extractTriangleSet s = 
@@ -169,6 +182,9 @@ module Interface =
         solidAndWireViewIcosaSection (tectonicColours2 <| extractCompleteClusterData state.model)  state (extractCompleteClusterData state.model)
       | _ ->
         failwith "Bad render combination"
+    | MercatorView ->
+        solidViewMercator state
+        None
     | _ -> failwith "Unimplemented render mode"
 
   let maybeUpdateCacheState state renderCacheOpt = 

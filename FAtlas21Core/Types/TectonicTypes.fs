@@ -56,3 +56,7 @@ module TectonicTypes =
     connectedFaces = u.connectedFaces ;
     allClusters = u.allClusters
   }
+
+  type ClusterBoundaryPoint = { pt : Cartesian; inUrl : VertexUrl; outUrl : VertexUrl; radius : float; argument : float }
+
+  type ClusterBoundary = { ref : Cartesian; hub : Cartesian; pts : ClusterBoundaryPoint list }

@@ -14,6 +14,7 @@ module AtlasStateTypes =
   | BasicCoordinate
   | IcosaView of ColourScheme  
   | ClusterView of ColourScheme
+  | MercatorView
 
   type Message =
   | NoOp

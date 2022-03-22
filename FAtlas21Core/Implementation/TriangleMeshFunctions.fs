@@ -508,13 +508,7 @@ module TriangleMeshFunctions =
   
   let getVertexNeighboursFromUrl (ts : TriangleSet<'A>) (url : VertexUrl) =
     let st = ts.triangles.[url.t]
-    let r = getVertexNeighbours ts st url.t (url.i, url.j)
-    let x =
-      if List.exists(fun u -> u.i + u.j > 16) r then
-        2
-      else
-        1
-    r
+    getVertexNeighbours ts st url.t (url.i, url.j)
 
   let urlToKey (ts : TriangleSet<KeyedPoint<'A>>) url = 
     let t = ts.triangles.[url.t]

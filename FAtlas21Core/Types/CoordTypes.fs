@@ -1,8 +1,8 @@
 ﻿namespace FAtlas
 
 module CoordTypes = 
-  type Coordinate = { latitude : double; longitude : double}
-  type Cartesian = { x : double; y : double; z : double } with
+  type Coordinate = { latitude : float; longitude : float}
+  type Cartesian = { x : float; y : float; z : float } with
     static member (+) (l : Cartesian, r : Cartesian) =
       { x = (l.x + r.x); y = (l.y + r.y); z = (l.z + r.z) } 
     static member (-) (l : Cartesian, r : Cartesian) =

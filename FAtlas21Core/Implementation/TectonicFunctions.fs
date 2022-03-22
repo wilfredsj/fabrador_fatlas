@@ -208,3 +208,95 @@ module TectonicFunctions =
     let t = ts.triangles.[url.t]
     let p = t.points.[url.i].[url.j].datum
     cartFromSphereWithRadius r p
+    
+  let accumulateSomethingUntil ontrue onfalse predicate list =
+    let rec accumulateSomethingUntil' acc ontrue onfalse predicate list =
+      match list with
+      | [] -> acc
+      | h :: tail ->
+        if predicate h then
+          ontrue acc h
+        else
+          accumulateSomethingUntil' ((onfalse h) :: acc) ontrue onfalse predicate tail
+    accumulateSomethingUntil' [] ontrue onfalse predicate list
+      
+  let accumulateSomethingButSkipHeadIfTrue ontrue onfalse predicate list =
+    match list with
+    | [] -> []
+    | h :: tail ->
+      if predicate h then
+        accumulateSomethingUntil ontrue onfalse predicate tail
+      else
+        accumulateSomethingUntil ontrue onfalse predicate list
+
+  let createClusterBoundary ts (lookup : Map<VertexUrl,int>) centroid thisClusterId firstUrl =
+
+    let urlToCart_local = urlToCartesian ts 1.0
+
+    let getSortedNeighbours samplePointOpt url = 
+      let neighboursAndIsInternal = 
+        getVertexNeighboursFromUrl ts url
+        |> List.map(fun nurl -> (nurl, (Map.find nurl lookup) = thisClusterId ))
+      let hub = urlToCart_local  url
+      let samplePoint = 
+        Option.defaultWith (fun () -> neighboursAndIsInternal |> List.filter(snd) |> List.head |> fst) samplePointOpt
+        |> urlToCart_local 
+      getBearings hub samplePoint (fst >> urlToCart_local) neighboursAndIsInternal
+      |> List.sortBy snd
+
+    let initialNeighbours = 
+      getSortedNeighbours None firstUrl
+
+    let duplicatedNeighbours = 
+      initialNeighbours @ [List.head initialNeighbours]
+
+    let referencePoint = 
+      duplicatedNeighbours
+      |> List.pairwise
+      |> List.tryPick(
+        fun (((u1, sc1), b1), ((u2, sc2), b2)) -> 
+          if ((sc1 = true) && (sc2 = false)) then
+            Some u1
+          else 
+            None)
+      |> function
+         | Some x -> x
+         | None -> failwith "Logic error, should be at least 1 external point"
+
+    let referenceCart = urlToCart_local referencePoint
+
+    let bearinger = makeBearinger centroid referenceCart
+    
+
+    let makeBoundaryPoint inPoint inURL outUrl = 
+      let outPoint = urlToCart_local outUrl
+      let midPoint = scale (inPoint + outPoint) 0.5
+      let radius = modulus (midPoint - centroid)
+      { pt = midPoint; inUrl = inURL; outUrl = outUrl; radius = radius; argument = bearinger midPoint }
+      
+
+    let rec foldClusterBoundary' initialPair previousPoint listSoFar vertexUrl =
+      let matchedStartingPoint =
+        (previousPoint, vertexUrl) = initialPair
+      if matchedStartingPoint then
+        listSoFar
+      else
+        let neighboursAndIsInternal = 
+          getVertexNeighboursFromUrl ts vertexUrl
+          |> List.map(fun nurl -> (nurl, (Map.find nurl lookup) = thisClusterId ))
+        let hub = urlToCartesian ts 1.0 vertexUrl
+        let samplePoint = urlToCartesian ts 1.0 previousPoint
+        let withBearings = 
+          getBearings hub samplePoint (fst >> urlToCartesian ts 1.0) neighboursAndIsInternal
+          |> List.sortBy snd
+        let isInside = fun ((_, a), _) -> a = false
+
+        let outsideAction ((outUrl, _), _) =
+          makeBoundaryPoint hub vertexUrl outUrl
+        let insideAction acc ((inUrl, _), _) =
+          foldClusterBoundary' initialPair vertexUrl acc inUrl
+        accumulateSomethingButSkipHeadIfTrue insideAction outsideAction isInside withBearings
+
+    let points = foldClusterBoundary' (referencePoint, firstUrl) firstUrl [] firstUrl
+    { pts = points; hub = centroid; ref = referenceCart }
+

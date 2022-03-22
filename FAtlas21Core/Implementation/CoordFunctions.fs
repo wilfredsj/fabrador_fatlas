@@ -26,6 +26,9 @@ module CoordFunctions =
 
   let cartFromSphereWithRadius r = cartFromSphere >> scale' r
 
+  let cartToExternal v3 cart =
+    v3 (cart.x |> float32, cart.y |> float32, cart.z |> float32)
+
   
   let coordFromCart c =
     let r = c.x * c.x + c.y * c.y |> sqrt
@@ -52,6 +55,47 @@ module CoordFunctions =
       tl 
       |> List.fold myFold init
       |> fun (agg, mass) -> agg / (float mass)
+
+  let argument hub refAxis (x : Cartesian) =
+    let dx = x-hub
+    let dr = refAxis-hub
+    let cxr = cross dx dr
+    //// atan2
+    0
+     
+    // Get normal from surface
+    // refAxis x normal -> RHS vector
+    // dot dx ref
+    // dot dx rhs
+    // => atan2
+
+  // atan2 returns in [-pi , pi]
+  // more reasonably for sorting we want range [0, 2pi]
+  let bearing hub dref dref2 (x : Cartesian) =
+    let dx = x - hub
+    let cos_part = dot dref dx
+    let sin_part = dot dref2 dx
+    let at = atan2 cos_part sin_part
+    if at < -1e-6 then
+      at + 2.0 * System.Math.PI
+    else
+      at
+
+  let prepareBearing (hub : Cartesian) reference =
+    let dref = reference - hub
+    // assume hub is on unit sphere
+    // So outward unit vector same as 'hub'
+    let dref2 = cross dref hub
+    (normalize dref, normalize dref2)
+
+
+  let getBearings hub reference op xs =
+    let (dref, dref2) = prepareBearing hub reference
+    List.map(fun x -> (x, bearing hub dref dref2 <| op x)) xs
+
+  let makeBearinger hub reference =
+    let (dref, dref2) = prepareBearing hub reference
+    bearing hub dref dref2
 
   // These are the 20 vertices of a dodecahedron
   let dodecahedronVertices =

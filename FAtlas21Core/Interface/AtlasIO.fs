@@ -11,6 +11,7 @@ module AtlasIO =
     | "z" -> IcosaView GrayScale       |> NewRenderMode |> Some
     | "x" -> IcosaView TectonicColours |> NewRenderMode |> Some
     | "c" -> ClusterView TectonicColours |> NewRenderMode |> Some
+    | "v" -> Some <| NewRenderMode MercatorView
     | "d" -> Some <| Divide 1
     | _ -> None
 
