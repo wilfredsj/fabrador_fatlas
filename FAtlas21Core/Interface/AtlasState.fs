@@ -14,7 +14,7 @@ open AtlasIO
 open AtlasStateTypes
 
 module Interface =
-  let rng = System.Random(1338)
+  let mutable rng = System.Random(1338)
 
   let getVertexConverter cache np1 =
     match Map.tryFind np1 cache.vertexConverters with
@@ -245,6 +245,10 @@ module Interface =
       |> maybeUpdateCacheState ns
     else
       match message with
+      | ReSeed newSeed ->
+        printfn "Random Seed changed to %i" newSeed
+        rng <- System.Random(newSeed)
+        state
       | Restart ->
         let ns = blankState state
         updateView ns

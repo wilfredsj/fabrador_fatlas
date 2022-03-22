@@ -11,6 +11,7 @@
   // Fixed -14: Plot mode based on mercator GRID 
   // Fixed -19: Option to render cluster without wireframe 
   // Fixed -20: Able to Init/Divide/ClusterIterate from i/o
+  // Fixed -21: Runtime control over RNG seed
 
   // TODO:
   // AETHER-8:  assign base heights to clusters
@@ -23,7 +24,6 @@
   //       -16: render mode to see raw boundary
   //       -17: render mode to see (r',th') from parameterised boundary
   //       -18: 2D plot based on Mercator *Projection*
-  //       -21: Runtime control over RNG seed
 
 
 

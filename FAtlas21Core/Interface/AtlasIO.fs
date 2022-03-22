@@ -1,33 +1,59 @@
 ﻿namespace FAtlas
 
 open AtlasStateTypes
+open System.Text.RegularExpressions
 
-type PartialMessage = { chars : string }
+module AtlasIO = 
 
-module AtlasIO =
+  type PartialMessage = { chars : string }
+
+  type IOMatch =
+    | ExactMatch of Message
+    | PartialMatch of Message
+    | NoMatch
+
+  // Below (comment included) copied from Active Pattern documentation on Microsoft website
+
+  // ParseRegex parses a regular expression and returns a list of the strings that match each group in
+  // the regular expression.
+  // List.tail is called to eliminate the first element in the list, which is the full matched expression,
+  // since only the matches for each group are wanted.
+  let (|ParseRegex|_|) regex str =
+     let m = Regex(regex).Match(str)
+     if m.Success
+     then Some (List.tail [ for x in m.Groups -> x.Value ])
+     else None
+
   let partialMessage str =
     match str with
-    | "qq" -> Restart |> Some
-    | "qw" -> Divide 1 |> Some
-    | "qee" -> ClusterInit None |> Some
-    | "qre" -> ClusterIterate 100 |> Some
-    | "qrr" -> ClusterIterate 10000 |> Some
-    | "z" -> IcosaView GrayScale       |> NewRenderMode |> Some
-    | "x" -> IcosaView TectonicColours |> NewRenderMode |> Some
-    | "c" -> ClusterView { colours = TectonicColours; wireframeConnections = true } |> NewRenderMode |> Some
-    | "d" -> ClusterView { colours = TectonicColours; wireframeConnections = false }|> NewRenderMode |> Some
-    | "v" -> Some <| NewRenderMode MercatorView
-    | _ -> None
+    | ParseRegex "^q(\d+)$" [newSeed] -> ReSeed (System.Int32.Parse newSeed) |> PartialMatch
+    | "qq" -> Restart |> ExactMatch
+    | "qw" -> Divide 1 |> ExactMatch
+    | "qee" -> ClusterInit None |> ExactMatch
+    | "qr" -> ClusterIterate 100 |> PartialMatch
+    | "qrr" -> ClusterIterate 10000 |> ExactMatch
+    | "z" -> IcosaView GrayScale       |> NewRenderMode |> ExactMatch
+    | "x" -> IcosaView TectonicColours |> NewRenderMode |> ExactMatch
+    | "c" -> ClusterView { colours = TectonicColours; wireframeConnections = true } |> NewRenderMode |> ExactMatch
+    | "d" -> ClusterView { colours = TectonicColours; wireframeConnections = false }|> NewRenderMode |> ExactMatch
+    | "v" -> NewRenderMode MercatorView |> ExactMatch
+    | _ -> NoMatch
+
+  let forceMessage m =
+    match m with
+    | ExactMatch m' -> m'
+    | PartialMatch m' -> m'
+    | NoMatch -> NoOp
 
   let fullMessage pm =
-    ({chars = ""}, Option.defaultValue NoOp (partialMessage pm.chars))
+    ({chars = ""}, forceMessage (partialMessage pm.chars))
 
   let addToMessage pm ch = 
     let newStr = System.String.Concat [pm.chars; string ch]
     match partialMessage newStr with
-    | Some msg -> 
+    | ExactMatch msg -> 
       ({ chars = "" }, Some msg)
-    | None ->
+    | _ ->
       ({ chars = newStr}, None)
 
   
