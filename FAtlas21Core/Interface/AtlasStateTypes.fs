@@ -10,14 +10,18 @@ module AtlasStateTypes =
   | GrayScale
   | TectonicColours
 
+  type ClusterViewArgs = { colours : ColourScheme; wireframeConnections : bool }
+
   type RenderMode = 
   | BasicCoordinate
   | IcosaView of ColourScheme  
-  | ClusterView of ColourScheme
+  | ClusterView of ClusterViewArgs
   | MercatorView
 
   type Message =
   | NoOp
+  | Restart
+  | ReSeed of int
   | Divide of int
   | NewRenderMode of RenderMode
   | ClusterInit of int option

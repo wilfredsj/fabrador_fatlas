@@ -110,6 +110,15 @@ module Interface =
     let viewData = MercatorViewFunctions.createSolid pm' colourMaker 21 21
     state.callbacks.onUpdateCallback [viewData]
     ()
+    
+  let solidViewIcosaSectionNoWires wireColourer state (ccs : CompleteClusterAssignment<'A>) =
+    let ts = ccs.meshData
+    let (solid, newCache) =
+      drawAllIcosaSections 0.6 wireColourer state ts
+        
+    
+    state.callbacks.onUpdateCallback [concat3 "Triangles" solid]
+    newCache 
 
   let solidAndWireViewIcosaSection wireColourer state (ccs : CompleteClusterAssignment<'A>) =
     let ts = ccs.meshData
@@ -129,25 +138,33 @@ module Interface =
     state.callbacks.onUpdateCallback allElts
     newCache 
 
-  let getRenderMode state =
+  let defaultRenderMode state = 
     match state.model with
     | Init 
-    | IcosaDivision _ ->
-      match state.render with
-      | MercatorView -> MercatorView
-      | _ -> IcosaView GrayScale
-    | ClusterAssignment _ ->
-      match state.render with
-      | IcosaView GrayScale -> IcosaView GrayScale
-      | IcosaView TectonicColours -> IcosaView TectonicColours
-      | MercatorView -> MercatorView
-      | _ -> IcosaView TectonicColours
-    | ClusterFinished _ ->
-      match state.render with
-      | IcosaView GrayScale -> IcosaView GrayScale
-      | IcosaView TectonicColours -> IcosaView TectonicColours
-      | MercatorView -> MercatorView
-      | _ -> ClusterView TectonicColours
+    | IcosaDivision _ ->         IcosaView GrayScale
+    | ClusterAssignment _ ->     IcosaView TectonicColours
+    | ClusterFinished _ ->       ClusterView { colours = TectonicColours; wireframeConnections = true }
+  
+  let isSupportedRenderState state =
+    match state.render with
+    | MercatorView ->      true
+    | IcosaView GrayScale -> true
+    | IcosaView TectonicColours ->
+      match state.model with
+      | ClusterAssignment _
+      | ClusterFinished _ -> true
+      | _ -> false
+    | ClusterView _ ->
+      match state.model with
+      | ClusterFinished _ -> true
+      | _ -> false
+    | _ -> false
+
+  let getRenderMode state =
+    if isSupportedRenderState state then
+      state.render
+    else
+      defaultRenderMode state
 
   let extractTriangleSet s = 
     match s with
@@ -177,11 +194,16 @@ module Interface =
       | TectonicColours ->
         solidViewIcosaSection (tectonicColours <| extractClusterData state.model) state (extractTriangleSet state.model)
     | ClusterView cs ->
-      match cs with
-      | TectonicColours ->
-        solidAndWireViewIcosaSection (tectonicColours2 <| extractCompleteClusterData state.model)  state (extractCompleteClusterData state.model)
-      | _ ->
-        failwith "Bad render combination"
+      let colours = 
+        match cs.colours with
+        | TectonicColours ->
+          (tectonicColours2 <| extractCompleteClusterData state.model)
+        | _ ->
+          failwith "Bad render combination"
+      if cs.wireframeConnections then
+        solidAndWireViewIcosaSection colours state (extractCompleteClusterData state.model)
+      else
+        solidViewIcosaSectionNoWires colours state (extractCompleteClusterData state.model)
     | MercatorView ->
         solidViewMercator state
         None
@@ -199,6 +221,7 @@ module Interface =
     { state with model = ClusterAssignment (init, vc)}
 
   let divideClusterState state (cs : ClusterAssigmentState<(char*int) list>) vc n =
+    
     let ncs =
       [1 .. n]
       |> List.fold (fun s _ -> expandOneCluster rng cs.meshData s) cs
@@ -208,15 +231,24 @@ module Interface =
     else
       { state with model = ClusterAssignment (ncs, vc)}
 
+  let blankState state =
+    let data = createIcosahedron()
+    let newModel = IcosaDivision data
+    { state with model = newModel }
+
+    
+
   let updateModel state message =
     if state.model = Init then
-      let data = createIcosahedron()
-      let newModel = IcosaDivision data
-      let ns = { state with model = newModel }
+      let ns = blankState state
       updateView ns
       |> maybeUpdateCacheState ns
     else
       match message with
+      | Restart ->
+        let ns = blankState state
+        updateView ns
+        |> maybeUpdateCacheState ns        
       | NewRenderMode nrm ->
         let ns = { state with render = nrm }
         updateView ns
@@ -252,6 +284,11 @@ module Interface =
   let updateModelWithScript state = List.fold updateModel state
 
   let mutable keypress = { chars = "" }
+
+  let onEnterPress state = 
+    let (kp', msg) = fullMessage keypress
+    keypress <- kp'
+    updateModel state msg
 
   let onkeyPress state ch = 
     let (kp', msg) = addToMessage keypress ch

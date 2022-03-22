@@ -7,16 +7,20 @@ type PartialMessage = { chars : string }
 module AtlasIO =
   let partialMessage str =
     match str with
-    | "q" -> Some <| NewRenderMode BasicCoordinate
+    | "qq" -> Restart |> Some
+    | "qw" -> Divide 1 |> Some
+    | "qee" -> ClusterInit None |> Some
+    | "qre" -> ClusterIterate 100 |> Some
+    | "qrr" -> ClusterIterate 10000 |> Some
     | "z" -> IcosaView GrayScale       |> NewRenderMode |> Some
     | "x" -> IcosaView TectonicColours |> NewRenderMode |> Some
-    | "c" -> ClusterView TectonicColours |> NewRenderMode |> Some
+    | "c" -> ClusterView { colours = TectonicColours; wireframeConnections = true } |> NewRenderMode |> Some
+    | "d" -> ClusterView { colours = TectonicColours; wireframeConnections = false }|> NewRenderMode |> Some
     | "v" -> Some <| NewRenderMode MercatorView
-    | "d" -> Some <| Divide 1
     | _ -> None
 
-  let fullMessage str =
-    Option.defaultValue NoOp (partialMessage str)
+  let fullMessage pm =
+    ({chars = ""}, Option.defaultValue NoOp (partialMessage pm.chars))
 
   let addToMessage pm ch = 
     let newStr = System.String.Concat [pm.chars; string ch]

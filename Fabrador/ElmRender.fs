@@ -20,6 +20,7 @@ let testData2 = hexAsPrimitive [{ row = 0; dicol = 0; z = 0.5f}; { row = 0; dico
 
 type PassedEvent<'Msg> =
   | KeyDown of char
+  | KeyEnter
   | DirectMessage of 'Msg
   | EventNoOp
 
@@ -197,8 +198,20 @@ void main(void)
       | Keys.Z -> Some 'z'
       | _ -> None
 
-    let msg = charOpt |> Option.map(KeyDown) |> Option.defaultValue EventNoOp
+    
 
+    let specialCharOpt = 
+      match e.Key with
+      | Keys.Enter
+      | Keys.Escape -> true
+      | _ -> false
+
+    let msg = 
+      match specialCharOpt with
+      | true -> KeyEnter
+      | false -> 
+        charOpt |> Option.map(KeyDown) |> Option.defaultValue EventNoOp
+    
     stateModel
     |> Option.iter(fun s ->
       let s' = generalCallback s msg

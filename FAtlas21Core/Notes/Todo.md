@@ -1,5 +1,6 @@
-﻿** TODO **
+﻿** TODO / DONE **
 
+  // DONE 
   // Fixed - 1: Why fail when ClusterIterate 50?
   // Fixed - 2: If vertex added to 1 cluster, needs to be removed from border of other clusters
   // Fixed - 3: If x-times in border, auto-add?
@@ -8,6 +9,8 @@
   // Fixed - 6: Keyboard callback to Atlas
   // Fixed - 7: Decouple Render modes
   // Fixed -14: Plot mode based on mercator GRID 
+  // Fixed -19: Option to render cluster without wireframe 
+  // Fixed -20: Able to Init/Divide/ClusterIterate from i/o
 
   // TODO:
   // AETHER-8:  assign base heights to clusters
@@ -20,6 +23,7 @@
   //       -16: render mode to see raw boundary
   //       -17: render mode to see (r',th') from parameterised boundary
   //       -18: 2D plot based on Mercator *Projection*
+  //       -21: Runtime control over RNG seed
 
 
 

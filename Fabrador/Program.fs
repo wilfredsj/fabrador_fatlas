@@ -25,6 +25,7 @@ let adaptedMsg s m =
   match m with
   | DirectMessage m1 -> updateModel s m1
   | KeyDown ch -> onkeyPress s ch
+  | KeyEnter -> onEnterPress s
   | EventNoOp -> s
 
 [<EntryPoint>]
