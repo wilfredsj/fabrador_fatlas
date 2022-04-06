@@ -75,7 +75,7 @@ module CoordFunctions =
     let dx = x - hub
     let cos_part = dot dref dx
     let sin_part = dot dref2 dx
-    let at = atan2 cos_part sin_part
+    let at = atan2 sin_part cos_part
     if at < -1e-6 then
       at + 2.0 * System.Math.PI
     else

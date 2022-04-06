@@ -11,6 +11,8 @@ module TriangleMeshTypes =
   type SingleTriangle<'A> = { keys : char list; scale : int; points : 'A array array }
   
   let sideLength N = N+1
+  let dim st =
+    (Array.length st.points) - 1
 
   let makeEmptyTriangle<'A> keys N =
     let side = sideLength N
@@ -53,6 +55,7 @@ module TriangleMeshTypes =
   // ... which is used by `getVertexNeighbours` 
   // Whether unique or not, can be thought of as O(1) pointer to a vertex
   type VertexUrl = { t : int; i : int; j : int }
+  let vtxStr vtx = sprintf "(%i, %i)[%i]" vtx.i vtx.j vtx.t
   type EdgeData = { duplicateEdges : (int*OrientedEdge) list; canonical : (int*OrientedEdge)}  
   type VertexData = { facesTouched : (int*OrientedVertex) list; canonical : (int*OrientedVertex) }
   let makeEdge edges =
@@ -65,6 +68,7 @@ module TriangleMeshTypes =
     trianglesByVertex : Map<char, VertexData>
     trianglesByEdge : Map<char*char, EdgeData>
     }
+
   
   // points
   // "A" [0][0]    ->        -> "C" [0][N]

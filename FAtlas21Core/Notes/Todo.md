@@ -12,6 +12,7 @@
   // Fixed -19: Option to render cluster without wireframe 
   // Fixed -20: Able to Init/Divide/ClusterIterate from i/o
   // Fixed -21: Runtime control over RNG seed
+  // Fixed -22: Remove duplication in "interior from edge" logic
 
   // TODO:
   // AETHER-8:  assign base heights to clusters

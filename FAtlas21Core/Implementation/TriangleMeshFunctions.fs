@@ -320,6 +320,9 @@ module TriangleMeshFunctions =
           (0, i)
       (idx, (ij))
 
+  let getIthVertexAlongEdgeAsUrl ts N idxPair i =
+    getIthVertexAlongEdge ts N idxPair i |> fun (t,(i,j)) -> { t = t; i = i; j = j}
+
   let getAllNeighboursOfVertex (ts : TriangleSet<'A>) (hub : char) (idxs : int list) =
     // Need to de-dupe
     // Can group edge refs
@@ -358,38 +361,7 @@ module TriangleMeshFunctions =
           |> fun (_,_,u) -> u
       )
     deduped
-        
-
-  let getEdgeInterior N (oe : OrientedEdge) idx =
-    if idx = 0 || idx = N then
-      failwith <| sprintf "Logic Error, getEdgeInterior should be not be called on corners i='%i'" idx
-    else
-      match oe with
-      | OE_AB ->
-        [(idx-1,1);(idx,1)]
-      | OE_AC ->
-        [(1, idx-1);(1,idx)]
-      | OE_BA ->
-        [((N-idx)-1,1);(N-idx,1)]
-      | OE_BC ->
-        let (i',j') = (N-idx, idx)
-        [(i',j'-1);(i'-1,j')]
-      | OE_CA->
-        [(1,(N-idx)-1);(1,N-idx)]
-      | OE_CB->
-        let (i',j') = (idx, N-idx)
-        [(i',j'-1);(i'-1,j')]
   
-  let getOtherEdgeNeighbours ts N from_t key idx =
-    
-    let edge = Map.find key ts.trianglesByEdge
-    let along = [getIthVertexAlongEdge ts N edge.canonical (idx-1); getIthVertexAlongEdge ts N edge.canonical (idx+1)]
-    let (o_t, o_o) = getOtherTriangleForEdge ts from_t key
-    let far = getEdgeInterior N o_o idx |> List.map(fun x -> (o_t, x))
-    let non_local = 
-      along @ far 
-      |> List.map(fun (t,(i,j)) -> { t = t; i = i; j = j})
-    non_local
 
   let getCanonicalEdgeElements  (ts : TriangleSet<'A>) N key idx = 
     let edge = Map.find key ts.trianglesByEdge
@@ -400,23 +372,95 @@ module TriangleMeshFunctions =
         idx
     getIthVertexAlongEdge ts N edge.canonical idx'
     |> fun (t,(i,j)) -> { t = t; i=i; j=j}
-
-  let normalizeElement (ts : TriangleSet<'A>) N (a,b,c) elt =
-    if elt.i = 0 then
-      if elt.j = 0 then
-        getCanonicalVertex ts N a
-      elif elt.j = N then
-        getCanonicalVertex ts N c
+      
+  let normalizeElement (ts : TriangleSet<'A>) elt =
+    let st = ts.triangles.[elt.t]
+    let N = dim st
+    let (a,b,c) = extractKey st
+    let normalizeElement' (ts : TriangleSet<'A>) N (a,b,c) elt =
+      if elt.i = 0 then
+        if elt.j = 0 then
+          getCanonicalVertex ts N a
+        elif elt.j = N then
+          getCanonicalVertex ts N c
+        else
+          getCanonicalEdgeElements ts N (a,c) elt.j
+      elif elt.i = N then
+        getCanonicalVertex ts N b
+      elif elt.j = 0 then
+        getCanonicalEdgeElements ts N (a,b) elt.i
+      elif elt.i + elt.j = N then
+        getCanonicalEdgeElements ts N (b,c) elt.j
       else
-        getCanonicalEdgeElements ts N (a,c) elt.j
-    elif elt.i = N then
-      getCanonicalVertex ts N b
-    elif elt.j = 0 then
-      getCanonicalEdgeElements ts N (a,b) elt.i
-    elif elt.i + elt.j = N then
-      getCanonicalEdgeElements ts N (b,c) elt.j
+        elt
+    normalizeElement' ts N (a,b,c) elt
+
+  
+  let rec getEdgeInterior ts N t (oe : OrientedEdge) idx =
+    if idx = 0 || idx = N then
+      failwith <| sprintf "Logic Error, getEdgeInterior should be not be called on corners i='%i'" idx
     else
-      elt
+      let (a,b,c) = extractKey ts.triangles.[t]
+      match oe with
+      | OE_AB ->
+        if idx = 1 then
+          let norm = getCanonicalEdgeElements ts N (a,c) 1
+          [ norm ;
+            { t=t; i=idx; j=1 } ]
+        elif idx = N-1 then
+          let norm = getCanonicalEdgeElements ts N (c,b) (N-1)
+          [ { t=t; i=idx-1; j=1 };
+            norm]
+        else
+          [ { t=t; i=idx-1; j=1 };
+            { t=t; i=idx; j=1 } ]
+      | OE_AC ->
+        if idx = 1 then
+          let norm = getCanonicalEdgeElements ts N (a,b) 1
+          [ { t = t; i = 1; j = idx}; 
+            norm ]
+        elif idx = (N-1) then
+          let norm = getCanonicalEdgeElements ts N (b,c) (N-1)
+          [  norm; 
+            { t = t; i = 1; j = idx-1} ]
+        else
+          [ { t = t; i = 1; j = idx}; 
+            { t = t; i = 1; j = idx-1} ]
+      | OE_BA ->
+        getEdgeInterior ts N t OE_AB (N - idx)
+      | OE_CB ->
+          let j' = N-idx
+          if idx = 1 then 
+            // Close to 'C'
+            // e.g. [1][N-1] is close to 'C'
+            
+            let norm = getCanonicalEdgeElements ts N (a,c) (N-1)
+        
+            [ { t = t; i = idx-1; j = j'}; 
+              norm ]
+          elif idx = N-1 then  
+            //Close to 'B', i.e. [N-1][1]
+            let norm = getCanonicalEdgeElements ts N (a,b) (N-1)
+            [ norm;
+              { t = t; i = idx; j = j'-1} ]
+          else
+            [ { t = t; i = idx-1; j = j'}; 
+              { t = t; i = idx; j = j'-1} ]
+      | OE_CA->
+        getEdgeInterior ts N t OE_AC (N - idx)
+      | OE_BC->
+        getEdgeInterior ts N t OE_CB (N - idx)
+
+  let getOtherEdgeNeighbours ts N from_t key idx =
+          
+    let edge = Map.find key ts.trianglesByEdge
+    let along = 
+      [getIthVertexAlongEdgeAsUrl ts N edge.canonical (idx-1); getIthVertexAlongEdgeAsUrl ts N edge.canonical (idx+1)]
+    let (o_t, o_o) = getOtherTriangleForEdge ts from_t key
+    let far = getEdgeInterior ts N o_t o_o idx 
+    let non_local = 
+      along @ far 
+    non_local
 
   let getVertexNeighbours (ts : TriangleSet<'A>) (st: SingleTriangle<'A>) (t : int) (i,j) = 
     // points
@@ -436,7 +480,7 @@ module TriangleMeshFunctions =
     //     [i][j-1]      XX     [i][j+1]
     //     [i+1][j-1] [i+1][j]     ---
 
-    let N = (Array.length st.points) - 1
+    let N = dim st
     if N = 1 then
       failwith "nyi"
     else
@@ -459,31 +503,79 @@ module TriangleMeshFunctions =
       else
         if i = 0 then
           // Edge AC
-          let local_elts = [ 
-            { t = t; i = 1; j = j}; 
-            { t = t; i = 1; j = j-1} ]
+          let local_elts = 
+            if j = 1 then
+              let norm = getCanonicalEdgeElements ts N (a,b) 1
+              [ { t = t; i = 1; j = j}; 
+                norm ]
+            elif j = (N-1) then
+              let norm = getCanonicalEdgeElements ts N (b,c) (N-1)
+              [  norm; 
+                { t = t; i = 1; j = j-1} ]
+            else
+              [ { t = t; i = 1; j = j}; 
+                { t = t; i = 1; j = j-1} ]
           let idx = j
           let key = (a,c)
           let non_local = getOtherEdgeNeighbours ts N t key idx
-          non_local @ local_elts
+          let ret = non_local @ local_elts
+          ret |> List.iter(fun x -> 
+            let y = normalizeElement ts x
+            if y <> x then 
+              printfn "Non-Normalized Neighbour %s of %s" (vtxStr x) (vtxStr {t=t; i=i; j=j})
+            )
+          ret
         elif j = 0 then
           // Edge AB
-          let local_elts = [ 
-            { t = t; i = i-1; j = 1}; 
-            { t = t; i = i; j = 1} ]
+          let local_elts = 
+            if i = 1 then
+              let norm = getCanonicalEdgeElements ts N (a,c) 1
+              [ { t = t; i = i-1; j = 1}; 
+                norm ]
+
+            elif i = (N-1) then
+              let norm = getCanonicalEdgeElements ts N (c,b) (N-1)
+              [  norm; 
+                { t = t; i = i; j = 1} ]
+            else
+              [ { t = t; i = i-1; j = 1}; 
+                { t = t; i = i; j = 1} ]
           let idx = i
           let key = (a,b)
           let non_local = getOtherEdgeNeighbours ts N t key idx
-          non_local @ local_elts
+          let ret = non_local @ local_elts
+          ret |> List.iter(fun x -> 
+            let y = normalizeElement ts x
+            if y <> x then 
+              printfn "Non-Normalized Neighbour %s of %s" (vtxStr x) (vtxStr {t=t; i=i; j=j})
+            )
+          ret
         elif (i+j) = N then
           // Edge BC
-          let local_elts = [ 
-            { t = t; i = i-1; j = j}; 
-            { t = t; i = i; j = j-1} ]
+          
+          let local_elts = 
+            if i = 1 then  //  [1][N-1] is close to 'C'
+              let norm = getCanonicalEdgeElements ts N (a,c) (N-1)
+              [ norm;
+                { t = t; i = i; j = j-1} ]
+            elif j = 1 then //  [N-1][1] is close to 'B'
+              let norm = getCanonicalEdgeElements ts N (a,b) (N-1)
+              
+              [ { t = t; i = i-1; j = j}; 
+                norm ]
+            else
+              [ { t = t; i = i-1; j = j}; 
+                { t = t; i = i; j = j-1} ]
           let idx = j
           let key = (b,c)
           let non_local = getOtherEdgeNeighbours ts N t key idx
-          non_local @ local_elts
+          let ret = non_local @ local_elts
+          ret |> List.iter(fun x -> 
+            let y = normalizeElement ts x
+            if y <> x then 
+              printfn "Non-Normalized Neighbour %s of %s" (vtxStr x) (vtxStr {t=t; i=i; j=j})
+            )
+          ret
         else
           // 6 inner vertices... however still chance some of them are "non-canonical"...
           // Maybe should have a global map (edge) to canonical triangle
@@ -496,7 +588,7 @@ module TriangleMeshFunctions =
             { t = t; i = i-1; j = j}; 
             { t = t; i = i; j = j-1} ]
           local_elts
-          |> List.map(normalizeElement ts N (a,b,c))
+          |> List.map(normalizeElement ts)
 
   let uniformCoordinate (rng : System.Random) (oneDtoTwoD : Map<int,int*int>) (ts : TriangleSet<'A>)  =
     let t = rng.Next(0,20)
