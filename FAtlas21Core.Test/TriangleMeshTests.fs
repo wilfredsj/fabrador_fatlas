@@ -19,8 +19,12 @@ let createSetupIcosahedron n =
     [1 .. n] 
     |> List.fold (fun t i -> divideIcosahedron t) data
   divided
-
+  
+let ts5 = createSetupIcosahedron 5
 let ts4 = createSetupIcosahedron 4
+let ts3 = createSetupIcosahedron 3
+let ts2 = createSetupIcosahedron 2
+let ts1 = createSetupIcosahedron 1
 
 let isNormalized ts url =
   let url' = normalizeElement ts url
@@ -103,29 +107,109 @@ let TestHubAdjacent_n4() =
  
   verifyNeighboursNormalized ts4 problemCase
 
+
+// AETHER-23
 [<Test>]
-let TestNormalizedVertex () =
-  let ts = createSetupIcosahedron 4
+let TestHubAdjacent_n1_case1() =
+  // Before:
+  // 16 / 16 / 16 / 37 / 72
+  // After:  
+  // 19 / 37 / 72 / 37 / 37
 
-  let problemCase = { t = 14; i = 13; j = 3}
-  let p2 = { t= 15; i = 0 ; j = 15}
-  // It's not normalized...
-  let n' = isNormalized ts problemCase
+  verifyNeighboursNormalized ts1 { t= 4; i = 1 ; j = 0}
 
-  let nbs = getVertexNeighboursFromUrl ts problemCase
 
-  let nbsN = List.map(fun n -> 
-    let n' = normalizeElement ts n
-    (n, n', n = n')) nbs
-
-  let e1 = getOtherEdgeNeighbours ts 16 15 ('C', 'E') 15
-
+// AETHER-23
+[<Test>]
+let TestHubAdjacent_n1_case2() =
+  // Before:
+  // 19 / 37 / 72 / 37 / 37
+  // 0  / 37 / 72 / 37 / 37
   
+  verifyNeighboursNormalized ts1 { t= 4; i = 1 ; j = 1}
 
-  let e2 = List.map(normalizeElement ts) e1
+// AETHER-23
+[<Test>]
+let TestHubAdjacent_n2_case1() =
+  // Before:
+  // 0  / 37 / 72 / 37 / 37
+  // 0  / 23 / 58 / 23 / 23  
+  verifyNeighboursNormalized ts2 { t= 4; i = 1 ; j = 0}
 
+// AETHER-23
+[<Test>]
+let TestHubAdjacent_n2_case2() =
+  // Before:
+  // 0  / 23 / 58 / 23 / 23  
+  // 0  / 0 / 35 / 0 / 0  
+  verifyNeighboursNormalized ts2 { t= 5; i = 1 ; j = 0}
+
+// AETHER-23
+[<Test>]
+let TestHubAdjacent_n3_case1() =
+  // Before:
+  // 0  / 0 / 35 / 0 / 0  
+  // 0  / 0 / 0  / 0 / 0
+  verifyNeighboursNormalized ts3 { t= 0; i = 0 ; j = 5}
+
+let allUrlsForSet ts =
+  ts.triangles
+    |> Array.indexed
+    |> List.ofArray
+    |> List.collect(fun (ti, t) ->
+      let N = Array.length t.points
+      [0 .. (N-1)]
+      |> List.collect(fun i -> Array.init (N - i) (fun j -> {t = ti; i = i ; j=j}) |> List.ofArray))
+    |> fun urls -> (ts,urls)
+
+let testAllUrls (ts,urlList) = 
+  let (goodUrls, badUrls) = 
+    urlList
+    |> List.map(fun u -> 
+      let nus = 
+        getVertexNeighboursFromUrl ts u 
+        |> List.mapi(fun i u' -> 
+           let u'' = normalizeElement ts u'
+           (i, u', u''))
+      let (good, bad) = nus |> List.partition(fun (_,a,b) -> a=b)
+      (u, good, bad))
+    |> List.partition(fun (url, good, bad) ->
+      if List.isEmpty bad then
+        true
+      else
+        false)
+  let badUrlsAsString =
+    badUrls
+    |> List.map(fun (url, good, bad) ->
+      let subMessage =
+        bad 
+        |> List.map(fun (i,nu,_) -> sprintf "%i: %s, " i (vtxStr nu))
+        |> System.String.Concat
+      sprintf "%s has badly normalized neighbours: %s\n" (vtxStr url) subMessage)
+    |> System.String.Concat
+  let total = urlList |> List.length
+  let badMessage () = sprintf "There are %i/%i neighbours with badly normalized neighbours:\n%s" (List.length badUrls) total badUrlsAsString
+      
+  Assert.True(List.isEmpty badUrls, badMessage())
   
-  //assertNormalized ts vtxStr problemCase
-  ()
+[<Test>]
+let TestAllNeighboursNormalizedN5() = 
+  ts5 |> allUrlsForSet |> testAllUrls
 
+[<Test>]
+let TestAllNeighboursNormalizedN4() = 
+  ts4 |> allUrlsForSet |> testAllUrls
+
+[<Test>]
+let TestAllNeighboursNormalizedN3() = 
+  ts3 |> allUrlsForSet |> testAllUrls
+
+[<Test>]
+let TestAllNeighboursNormalizedN2() = 
+  ts2 |> allUrlsForSet |> testAllUrls
+
+[<Test>]
+let TestAllNeighboursNormalizedN1() = 
+  ts1 |> allUrlsForSet |> testAllUrls
+  
 

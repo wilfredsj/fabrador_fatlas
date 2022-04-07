@@ -404,9 +404,15 @@ module TriangleMeshFunctions =
       match oe with
       | OE_AB ->
         if idx = 1 then
-          let norm = getCanonicalEdgeElements ts N (a,c) 1
-          [ norm ;
-            { t=t; i=idx; j=1 } ]
+          if N = 2 then
+            [
+              getCanonicalEdgeElements ts N (a,c) 1;
+              getCanonicalEdgeElements ts N (c,b) 1
+            ]
+          else
+            let norm = getCanonicalEdgeElements ts N (a,c) 1
+            [ norm ;
+              { t=t; i=idx; j=1 } ]
         elif idx = N-1 then
           let norm = getCanonicalEdgeElements ts N (c,b) (N-1)
           [ { t=t; i=idx-1; j=1 };
@@ -416,9 +422,15 @@ module TriangleMeshFunctions =
             { t=t; i=idx; j=1 } ]
       | OE_AC ->
         if idx = 1 then
-          let norm = getCanonicalEdgeElements ts N (a,b) 1
-          [ { t = t; i = 1; j = idx}; 
-            norm ]
+          if N = 2 then
+            [
+              getCanonicalEdgeElements ts N (a,b) 1;
+              getCanonicalEdgeElements ts N (b,c) 1
+            ]
+          else
+            let norm = getCanonicalEdgeElements ts N (a,b) 1
+            [ { t = t; i = 1; j = idx}; 
+              norm ]
         elif idx = (N-1) then
           let norm = getCanonicalEdgeElements ts N (b,c) (N-1)
           [  norm; 
@@ -431,18 +443,24 @@ module TriangleMeshFunctions =
       | OE_CB ->
           let j' = N-idx
           if idx = 1 then 
-            // Close to 'C'
-            // e.g. [1][N-1] is close to 'C'
+            if N = 2 then
+              [
+                getCanonicalEdgeElements ts N (a,c) 1;
+                getCanonicalEdgeElements ts N (a,b) 1
+              ]
+            else
+              // Close to 'C'
+              // e.g. [1][N-1] is close to 'C'
             
-            let norm = getCanonicalEdgeElements ts N (a,c) (N-1)
+              let norm = getCanonicalEdgeElements ts N (a,c) (N-1)
         
-            [ { t = t; i = idx-1; j = j'}; 
+              [ { t = t; i = idx; j = j'-1}; 
               norm ]
           elif idx = N-1 then  
             //Close to 'B', i.e. [N-1][1]
             let norm = getCanonicalEdgeElements ts N (a,b) (N-1)
             [ norm;
-              { t = t; i = idx; j = j'-1} ]
+              { t = t; i = idx-1; j = j'} ]
           else
             [ { t = t; i = idx-1; j = j'}; 
               { t = t; i = idx; j = j'-1} ]
@@ -505,6 +523,12 @@ module TriangleMeshFunctions =
           // Edge AC
           let local_elts = 
             if j = 1 then
+              if N = 2 then
+                [
+                getCanonicalEdgeElements ts N (a,b) 1;
+                getCanonicalEdgeElements ts N (b,c) 1
+                ]
+              else
               let norm = getCanonicalEdgeElements ts N (a,b) 1
               [ { t = t; i = 1; j = j}; 
                 norm ]
@@ -529,14 +553,20 @@ module TriangleMeshFunctions =
           // Edge AB
           let local_elts = 
             if i = 1 then
-              let norm = getCanonicalEdgeElements ts N (a,c) 1
-              [ { t = t; i = i-1; j = 1}; 
-                norm ]
+              if N = 2 then
+                [
+                getCanonicalEdgeElements ts N (a,c) 1;
+                getCanonicalEdgeElements ts N (c,b) (N-1)
+                ]
+              else
+                let norm = getCanonicalEdgeElements ts N (a,c) 1
+                [ { t = t; i = i; j = 1}; 
+                  norm ]
 
             elif i = (N-1) then
               let norm = getCanonicalEdgeElements ts N (c,b) (N-1)
               [  norm; 
-                { t = t; i = i; j = 1} ]
+                { t = t; i = i-1; j = 1} ]
             else
               [ { t = t; i = i-1; j = 1}; 
                 { t = t; i = i; j = 1} ]
@@ -554,10 +584,16 @@ module TriangleMeshFunctions =
           // Edge BC
           
           let local_elts = 
-            if i = 1 then  //  [1][N-1] is close to 'C'
-              let norm = getCanonicalEdgeElements ts N (a,c) (N-1)
-              [ norm;
-                { t = t; i = i; j = j-1} ]
+            if i = 1 then              
+              if N = 2 then
+                [
+                getCanonicalEdgeElements ts N (a,c) 1;
+                getCanonicalEdgeElements ts N (a,b) 1
+                ]
+              else//  [1][N-1] is close to 'C'
+                let norm = getCanonicalEdgeElements ts N (a,c) (N-1)
+                [ norm;
+                  { t = t; i = i; j = j-1} ]
             elif j = 1 then //  [N-1][1] is close to 'B'
               let norm = getCanonicalEdgeElements ts N (a,b) (N-1)
               
