@@ -14,6 +14,7 @@
   // Fixed -21: Runtime control over RNG seed
   // Fixed -22: Remove duplication in "interior from edge" logic
   // Fixed -23: Test cases for all neighbours being normalized (n=4 and n=3)
+  // Fixed -24: Test case for all points being reasonably adjacent
 
   // TODO:
   // AETHER-8:  assign base heights to clusters
@@ -26,7 +27,6 @@
   //       -16: render mode to see raw boundary
   //       -17: render mode to see (r',th') from parameterised boundary
   //       -18: 2D plot based on Mercator *Projection*
-  //       -24: Test case for all points being reasonably adjacent
 
 
 

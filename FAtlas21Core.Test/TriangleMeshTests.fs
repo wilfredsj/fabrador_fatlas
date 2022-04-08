@@ -8,6 +8,7 @@ open FAtlas.AtlasIO
 open FAtlas.TectonicFunctions
 open FAtlas.TriangleMeshTypes
 open FAtlas.TriangleMeshFunctions
+open FAtlas.CoordFunctions
 
 let emptyCallback = { makeVertex = (fun x -> 1); makeColour = (fun x -> 1); onUpdateCallback = fun x -> () }
 
@@ -188,7 +189,7 @@ let testAllUrls (ts,urlList) =
       sprintf "%s has badly normalized neighbours: %s\n" (vtxStr url) subMessage)
     |> System.String.Concat
   let total = urlList |> List.length
-  let badMessage () = sprintf "There are %i/%i neighbours with badly normalized neighbours:\n%s" (List.length badUrls) total badUrlsAsString
+  let badMessage () = sprintf "There are %i/%i vertices with badly normalized neighbours:\n%s" (List.length badUrls) total badUrlsAsString
       
   Assert.True(List.isEmpty badUrls, badMessage())
   
@@ -212,4 +213,56 @@ let TestAllNeighboursNormalizedN2() =
 let TestAllNeighboursNormalizedN1() = 
   ts1 |> allUrlsForSet |> testAllUrls
   
+let testAllUrlsReasonablyAdjacent (ts, urlList) =
+  let toCart = urlToCartesian ts 1.0
+  let sampleArcRadius =
+    match urlList with
+    | [] -> failwith "Bad test case"
+    | h :: _ ->
+        let ns = getVertexNeighboursFromUrl ts h 
+        match ns with
+        | [] -> failwith "No neighhours"
+        | x :: _ ->
+          let c1 = toCart h
+          let c2 = toCart x
+          angle c1 c2
+  let tolerance = 1.2
+  // Seems wierd it has to be so large
+  let lower = sampleArcRadius / tolerance
+  let upper = sampleArcRadius * tolerance
+  let (goodUrls, badUrls) = 
+    urlList
+    |> List.map(fun u -> 
+      let c1 = toCart u
+      let nus = 
+        getVertexNeighboursFromUrl ts u 
+        |> List.mapi(fun i u' -> 
+          let c_i = toCart u'
+          (i, u', angle c1 c_i))
+      let (good, bad) = nus |> List.partition(fun (_,_,th) -> (th > lower) && (th < upper))
+      (u, good, bad))
+    |> List.partition(fun (url, good, bad) ->
+      if List.isEmpty bad then
+        true
+      else
+        false)
+  let badUrlsAsString =
+    badUrls
+    |> List.map(fun (url, good, bad) ->
+      let subMessage =
+        bad 
+        |> List.map(fun (i,nu,th) -> sprintf "%i: %s,@%f" i (vtxStr nu) th)
+        |> System.String.Concat
+      sprintf "%s has irregularly spaced neighbours: %s\n" (vtxStr url) subMessage)
+    |> System.String.Concat
+  let total = urlList |> List.length
+  let badMessage () = sprintf "There are %i/%i vertices with irregularly spaced neighbours, bounds=(%f,%f):\n%s" (List.length badUrls) total lower upper badUrlsAsString
+  Assert.True(List.isEmpty badUrls, badMessage())
+
+
+// AETHER-24
+[<Test>]
+let TestAllNeighboursRegularN4() = 
+  ts4 |> allUrlsForSet |> testAllUrlsReasonablyAdjacent
+    
 
