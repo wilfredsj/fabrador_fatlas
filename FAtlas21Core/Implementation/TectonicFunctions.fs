@@ -208,28 +208,30 @@ module TectonicFunctions =
     let t = ts.triangles.[url.t]
     let p = t.points.[url.i].[url.j].datum
     cartFromSphereWithRadius r p
+
+  let rec accumulateSomethingUntil' acc ontrue onfalse predicate list =
+    match list with
+    | [] -> acc
+    | h :: tail ->
+      if predicate h then
+        ontrue acc h
+      else
+        accumulateSomethingUntil' ((onfalse h) :: acc) ontrue onfalse predicate tail
     
   let accumulateSomethingUntil ontrue onfalse predicate list =
-    let rec accumulateSomethingUntil' acc ontrue onfalse predicate list =
-      match list with
-      | [] -> acc
-      | h :: tail ->
-        if predicate h then
-          ontrue acc h
-        else
-          accumulateSomethingUntil' ((onfalse h) :: acc) ontrue onfalse predicate tail
     accumulateSomethingUntil' [] ontrue onfalse predicate list
       
-  let accumulateSomethingButSkipHeadIfTrue ontrue onfalse predicate list =
+  let accumulateSomethingButSkipHeadIfTrue acc ontrue onfalse predicate list =
     match list with
     | [] -> []
     | h :: tail ->
       if predicate h then
-        accumulateSomethingUntil ontrue onfalse predicate tail
+        accumulateSomethingUntil' acc ontrue onfalse predicate tail
       else
-        accumulateSomethingUntil ontrue onfalse predicate list
+        accumulateSomethingUntil' acc ontrue onfalse predicate list
 
-  let createClusterBoundary ts (lookup : Map<VertexUrl,int>) centroid thisClusterId firstUrl =
+  let createClusterBoundary ts (lookup : Map<VertexUrl,int>) centroid thisClusterId firstUrl' =
+    let firstUrl = normalizeElement ts firstUrl'
 
     let urlToCart_local = urlToCartesian ts 1.0
 
@@ -276,11 +278,24 @@ module TectonicFunctions =
       
 
     let rec foldClusterBoundary' initialPair previousPoint listSoFar vertexUrl =
+      printfn "Hub = %s" <| vtxStr vertexUrl
+      printfn "NormHub = %s" <| (normalizeElement ts vertexUrl |> vtxStr)
+      printfn "Previous = %s" <| vtxStr previousPoint
+      printfn "NormPrev = %s" <| (normalizeElement ts previousPoint |> vtxStr)
+      printfn "Check hub is internal %b" <| ((Map.find vertexUrl lookup) = thisClusterId)
+      printfn "Boundary so far:"
+      
+      listSoFar
+      |> List.iter(printfn "%s" << bpStr)
       let matchedStartingPoint =
-        (previousPoint, vertexUrl) = initialPair
+        Some (previousPoint, vertexUrl) = initialPair
       if matchedStartingPoint then
         listSoFar
       else
+        let i' = 
+          match initialPair with
+          | None -> Some (previousPoint, vertexUrl)
+          | x -> x
         let neighboursAndIsInternal = 
           getVertexNeighboursFromUrl ts vertexUrl
           |> List.map(fun nurl -> (nurl, (Map.find nurl lookup) = thisClusterId ))
@@ -289,14 +304,55 @@ module TectonicFunctions =
         let withBearings = 
           getBearings hub samplePoint (fst >> urlToCartesian ts 1.0) neighboursAndIsInternal
           |> List.sortBy snd
-        let isInside = fun ((_, a), _) -> a = false
-
+        let [(_, consistencyBearing)] = getBearings hub samplePoint (urlToCartesian ts 1.0) [previousPoint]
+        printfn "Check %f" consistencyBearing
+        let isInside = fun ((_, a), _) -> a = true
+        withBearings
+        |> List.iter(fun ((vtx, inflag), b) ->
+          printfn "%f (%b): %s " b inflag <| vtxStr vtx)
         let outsideAction ((outUrl, _), _) =
           makeBoundaryPoint hub vertexUrl outUrl
         let insideAction acc ((inUrl, _), _) =
-          foldClusterBoundary' initialPair vertexUrl acc inUrl
-        accumulateSomethingButSkipHeadIfTrue insideAction outsideAction isInside withBearings
+          foldClusterBoundary' i' vertexUrl acc inUrl
+        accumulateSomethingButSkipHeadIfTrue listSoFar insideAction outsideAction isInside withBearings
 
-    let points = foldClusterBoundary' (referencePoint, firstUrl) firstUrl [] firstUrl
+    let points = foldClusterBoundary' None referencePoint [] firstUrl
     { pts = points; hub = centroid; ref = referenceCart }
 
+  let finaliseCluster boundaries (icd : IncompleteClusterDatum) = 
+    { 
+      id = icd.id;
+      members = icd.members
+      orderedBorder = Map.find icd.id boundaries
+    }
+  
+  let makeCentroid ts (vtxs : VertexUrl list) =
+    let urlToCart_local = urlToCartesian ts 1.0
+    vtxs 
+    |> List.map(urlToCart_local)
+    |> centroid
+    
+  let finalize (u : ClusterAssigmentState<'A>) = 
+    let ts = u.meshData
+    let centroids = 
+      u.allClusters
+      |> Array.map(fun c ->
+        (c.id, makeCentroid ts c.members))
+      |> Map.ofArray
+    let boundaries =
+      u.connectionsSoFar
+      |> List.collect(fun ((c1, v1), (c2, v2)) ->
+          [(c1, v1); (c2, v2)])
+      |> List.distinctBy(fst)
+      |> List.map(fun (clusterId, sampleBorderVertex) ->
+        let centroid = Map.find clusterId centroids
+        (clusterId, createClusterBoundary ts u.clusterAssignments centroid clusterId sampleBorderVertex))
+      |> Map.ofList
+    { 
+      connections = u.connectionsSoFar ;
+      meshData = u.meshData;
+      clusterAssignments = u.clusterAssignments ;
+      lookupFromKey = u.lookupFromKey ;
+      connectedFaces = u.connectedFaces ;
+      allClusters = u.allClusters |> Array.map(finaliseCluster boundaries)
+    }

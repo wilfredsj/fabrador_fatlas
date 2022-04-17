@@ -8,7 +8,7 @@ module TectonicTypes =
   type BasicPoint = KeyedPoint<Coordinate>
 
   
-  type ClusterData = { 
+  type IncompleteClusterDatum = { 
     id : int; 
     members : VertexUrl list; 
     borderValencyOne : Set<VertexUrl>;
@@ -23,16 +23,26 @@ module TectonicTypes =
     clusterAssignments : Map<VertexUrl, int>; 
     lookupFromKey : Map<'Key, int>;
     unfinishedClusters : int [];
-    allClusters : ClusterData[];
+    allClusters : IncompleteClusterDatum[];
     connectionsSoFar : ((int*VertexUrl)*(int*VertexUrl)) list;
     connectedFaces : Set<int*int>
+  }
+  
+  type ClusterBoundaryPoint = { pt : Cartesian; inUrl : VertexUrl; outUrl : VertexUrl; radius : float; argument : float }
+  let bpStr bp = sprintf "In: %s | Out: %s R=%f Th=%f" (vtxStr bp.inUrl) (vtxStr bp.outUrl) bp.radius bp.argument
+  type ClusterBoundary = { ref : Cartesian; hub : Cartesian; pts : ClusterBoundaryPoint list }
+
+  type CompleteClusterDatum = {
+    id : int;
+    members : VertexUrl list
+    orderedBorder : ClusterBoundary
   }
 
   type CompleteClusterAssignment<'Key when 'Key : comparison> = {
     meshData : TriangleSet<BasicPoint>; 
     clusterAssignments : Map<VertexUrl, int>; 
     lookupFromKey : Map<'Key, int>;
-    allClusters : ClusterData[];
+    allClusters : CompleteClusterDatum[];
     connections : ((int*VertexUrl)*(int*VertexUrl)) list;
     connectedFaces : Set<int*int>
   }
@@ -47,16 +57,3 @@ module TectonicTypes =
   }
   
   let finishedAssigment u = Array.isEmpty u.unfinishedClusters
-
-  let finalize u = { 
-    connections = u.connectionsSoFar ;
-    meshData = u.meshData;
-    clusterAssignments = u.clusterAssignments ;
-    lookupFromKey = u.lookupFromKey ;
-    connectedFaces = u.connectedFaces ;
-    allClusters = u.allClusters
-  }
-
-  type ClusterBoundaryPoint = { pt : Cartesian; inUrl : VertexUrl; outUrl : VertexUrl; radius : float; argument : float }
-
-  type ClusterBoundary = { ref : Cartesian; hub : Cartesian; pts : ClusterBoundaryPoint list }
