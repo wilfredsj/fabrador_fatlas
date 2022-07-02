@@ -16,6 +16,7 @@
   // Fixed -23: Test cases for all neighbours being normalized (n=4 and n=3)
   // Fixed -24: Test case for all points being reasonably adjacent
   //	   -27: Remove dependency of Fabrador on FAtlas
+  //       -26: Separate out parts of AtlasViewFunctions that does not depend on AtlasStateTypes
 
   // TODO:
   // AETHER-8:  assign base heights to clusters
@@ -29,7 +30,6 @@
   //       -17: render mode to see (r',th') from parameterised boundary
   //       -18: 2D plot based on Mercator *Projection*
   //       -25: Implement some shader for 2D projection
-  //       -26: Separate out parts of AtlasViewFunctions that does not depend on AtlasStateTypes
 
 
 
