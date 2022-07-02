@@ -18,12 +18,17 @@ module AtlasStateTypes =
   | ClusterView of ClusterViewArgs
   | MercatorView
 
+  type UIAction =
+  | ForceEuclidian
+  | ForceMercator
+
   type Message =
   | NoOp
   | Restart
   | ReSeed of int
   | Divide of int
   | NewRenderMode of RenderMode
+  | UIInstruction of UIAction
   | ClusterInit of int option
   | ClusterIterate of int
 
@@ -34,7 +39,12 @@ module AtlasStateTypes =
   | ClusterFinished of CompleteClusterAssignment<(char*int) list>
 
   type A3V = float32*float32*float32
-  type AtlasCallbacks<'V,'C> = { makeVertex : A3V -> 'V; makeColour : A3V -> 'C; onUpdateCallback : (('V []*'C[]*int[]*string) list) -> unit }
+  type UIUnitCallbacks = { forceEuclidian : unit -> unit; forceMercator : unit -> unit }
+  type AtlasCallbacks<'V,'C> = { 
+    makeVertex : A3V -> 'V; 
+    makeColour : A3V -> 'C; 
+    onUpdateCallback : (('V []*'C[]*int[]*string) list) -> unit;
+    uiCallbacks : UIUnitCallbacks}
   type AtlasCache = { vertexConverters : Map<int, VertexConverters> }
   let emptyCache = { vertexConverters = Map.empty }
   type AtlasState<'V,'C> = { render : RenderMode; model : ModelState; callbacks : AtlasCallbacks<'V,'C>; renderCache : AtlasCache}

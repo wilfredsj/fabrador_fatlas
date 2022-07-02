@@ -33,6 +33,43 @@ type ElmLikeWindow<'Msg,'StateModel>(gws, nws, primOveride, updater : UpdateCall
 
   let primOvd : PrimitiveGLData Option = primOveride
 
+  // This is probably not viable
+  // a triangle in R^3 could be 2-3 triangles when 
+  let vertexShaderSource_MercatorProjection = 
+      @"
+  #version 130
+  precision highp float;
+  uniform mat4 projection_matrix;
+  uniform mat4 modelview_matrix;
+  in vec3 in_position;
+  in vec3 in_normal;
+  in vec3 base_colour;
+  out vec3 normal;
+  out vec3 colour2;
+  
+  vec4 fromSphere(in vec4 cart)
+  {
+      vec4 spherical;
+  
+      spherical.x = atan(cart.x, cart.y) / 2.5;
+      float xy = sqrt(cart.x * cart.x + cart.y * cart.y);
+  
+      spherical.y = -1.1 + atan(xy, cart.z) / 1.45;
+      spherical.z = -1.0 + (spherical.x * spherical.x) * 0.05; 
+      spherical.w = cart.w;
+
+      return spherical;
+  }
+  void main(void)
+  {
+    normal = vec3(0,0,1);
+    normal = (modelview_matrix * vec4(in_normal, 0)).xyz;
+    colour2 = base_colour;
+    //gl_Position = projection_matrix * modelview_matrix * vec4(fromSphere(in_position), 1);
+    gl_Position = fromSphere(modelview_matrix * vec4(in_position, 1));
+    //gl_Position = vec4(fromSphere(in_position), 1);
+  }"
+
   let vertexShaderSource = 
     @"
 #version 130
@@ -68,28 +105,47 @@ void main(void)
   //out_frag_color = vec4(ambient + diffuse * lightColor, 1.0);
   out_frag_color = vec4(colour2, 1.0);
 }"
+  let rotateProjection dz = fun (modelviewMatrix : Matrix4) ->     
+    let rotation = Matrix4.CreateRotationZ(dz)
+    Matrix4.Mult(rotation, modelviewMatrix)
 
   let initModel aspectRatio =
-    let spd = makeShader vertexShaderSource fragmentShaderSource
-    let sdr = createShaders spd
+    let mercatorShader = makeShader vertexShaderSource_MercatorProjection fragmentShaderSource
+    let euclideanShader = makeShader vertexShaderSource fragmentShaderSource
+
+
+    let commonUniforms = 
+      [
+        ("projection_matrix", 
+          UM4 (
+            Matrix4.CreatePerspectiveFieldOfView(float32 Math.PI / 4.0f, aspectRatio, 0.001f, 100.0f),
+            None))
+            //None))
+        ("lightVecNormalized",
+          UV3 (
+             Vector3.Normalize <| Vector3(0.5f, -2.5f, 2.0f),
+             None
+            ))
+      ]
+    let mercatorUniforms = 
+      ("modelview_matrix", UM4 (
+        Matrix4.LookAt(new Vector3(0.0f, 0.0f, 0.2f), new Vector3(0.0f, 0.0f, 0.0f), new Vector3(0.0f, 1.0f, 0.0f)), 
+        Some <| rotateProjection -0.005f))
+       :: commonUniforms
+    let euclideanUniforms = 
+      ("modelview_matrix", UM4 (
+        Matrix4.LookAt(new Vector3(0.0f, 3.0f, 5.0f), new Vector3(0.0f, 0.0f, 0.0f), new Vector3(0.0f, 1.0f, 0.0f)), 
+          Some <| rotateProjection -0.005f))
+      :: commonUniforms
+    let msC = compileShaders mercatorShader mercatorUniforms
+    let esC = compileShaders euclideanShader euclideanUniforms
     
-    let modelviewMatrixLocation = GLL.GetUniformLocation(sdr.handle, "modelview_matrix")
-    let modelviewMatrix = Matrix4.LookAt(new Vector3(0.0f, 3.0f, 5.0f), new Vector3(0.0f, 0.0f, 0.0f), new Vector3(0.0f, 1.0f, 0.0f))
-    GLL.UniformMatrix4(modelviewMatrixLocation, false, ref modelviewMatrix)
-
-    let projectionMatrixLocation = GLL.GetUniformLocation(sdr.handle, "projection_matrix")
-    let projectionMatrix = Matrix4.CreatePerspectiveFieldOfView(float32 Math.PI / 4.0f, aspectRatio, 1.0f, 100.0f)
-    GLL.UniformMatrix4(projectionMatrixLocation, false, ref projectionMatrix)
-
-    let lightSourceLocation = GLL.GetUniformLocation(sdr.handle, "lightVecNormalized")
-    let lightVecNormalized = Vector3(0.5f, -2.5f, 2.0f) |> Vector3.Normalize
-    GLL.Uniform3(lightSourceLocation, lightVecNormalized)
-
-    { shader = sdr; 
+    let (shader, uniforms) =  bindShader msC
+    { shader = shader;
+      euclShader = esC;
+      mercShader = msC;
       primitives = []; 
-      modelviewMatrixOpt = Some(modelviewMatrixLocation, modelviewMatrix);
-      projectionMatrixOpt = Some(projectionMatrixLocation, projectionMatrix);
-      lightSourceOpt = Some(lightSourceLocation, lightVecNormalized);
+      uniforms = uniforms;
       vaoHandleOpt = [] }
 
 
@@ -101,6 +157,16 @@ void main(void)
   
   member o.overrideState newState =
     stateModel <- Some newState
+    ()
+
+  member o.forceEuclidean () =    
+    let (shader, uniforms) =  bindShader renderModel.euclShader
+    renderModel <- { renderModel with shader = shader; uniforms = uniforms }
+    ()
+    
+  member o.forceMercator () =
+    let (shader, uniforms) =  bindShader renderModel.mercShader
+    renderModel <- { renderModel with shader = shader; uniforms = uniforms }
     ()
 
   member o.changeVerticesTuples data = 
@@ -148,24 +214,10 @@ void main(void)
     GL.ClearColor(System.Drawing.Color.MidnightBlue)
 
   override o.OnUpdateFrame e =
-    let newMVM = 
-      renderModel.modelviewMatrixOpt
-      |> Option.map(fun (modelviewMatrixLocation, modelviewMatrix) -> 
-        let rotation = Matrix4.CreateRotationZ(float32 e.Time  |> fun x -> x * -0.25f)
-        let rotated = Matrix4.Mult(rotation, modelviewMatrix)
-        GL.UniformMatrix4(modelviewMatrixLocation, false, ref rotated)
-        (modelviewMatrixLocation, rotated)
-      )
-    let newLS =
-      renderModel.lightSourceOpt
-      |> Option.map(fun (lightSourceLoc, lightSource) -> 
-        let rotation = Matrix3.CreateRotationX(float32 e.Time |> fun x -> x * 0.0f)
-        let rq = Quaternion.FromMatrix(rotation)
-        let rotated = Vector3.Transform(lightSource, rq)
-        GL.Uniform3(lightSourceLoc, ref rotated)
-        (lightSourceLoc, rotated)
-      )
-    renderModel <- { renderModel with modelviewMatrixOpt = newMVM; lightSourceOpt = newLS }
+    let newUniforms =
+      renderModel.uniforms
+      |> Map.map(fun n (loc, uv) -> (loc, incrementUniform loc uv))
+    renderModel <- { renderModel with uniforms = newUniforms }
 
   override o.OnKeyDown e =
     let charOpt = 
@@ -196,6 +248,8 @@ void main(void)
       | Keys.X -> Some 'x'
       | Keys.Y -> Some 'y'
       | Keys.Z -> Some 'z'
+      | Keys.LeftBracket -> Some '['
+      | Keys.RightBracket -> Some ']'
       | _ -> None
 
     

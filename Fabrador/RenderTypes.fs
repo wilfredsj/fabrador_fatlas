@@ -24,18 +24,39 @@ type BoundVaoPrimitiveData = {
   vaoHandle : int
 }
 
-type ShaderProgramData = { fsSource : string; vsSource : string; positionInput : string option; colourInput : string option; normalInput : string option }
+type ShaderProgramData = { 
+  fsSource : string; 
+  vsSource : string; 
+  positionInput : string option; 
+  colourInput : string option; 
+  normalInput : string option }
+
+type SomeKindOfUniform =
+  | UV3 of (Vector3 * (Vector3 -> Vector3) Option)
+  | UM4 of (Matrix4 * (Matrix4 -> Matrix4) Option)
 
 let makeShader vss fss =
-  { fsSource = fss; vsSource = vss; positionInput = Some("in_position"); normalInput = Some("in_normal"); colourInput = Some("base_colour") }
+  { fsSource = fss; 
+    vsSource = vss; 
+    positionInput = Some("in_position"); 
+    normalInput = Some("in_normal"); 
+    colourInput = Some("base_colour") }
 
-type BoundShader = { details : ShaderProgramData; handle : int; fsError : string; vsError : string; shaderError : string }
+type CompiledShader = { 
+  details : ShaderProgramData; 
+  defaultUniforms : (string * SomeKindOfUniform) list;
+  handle : int; 
+  fsError : string; 
+  vsError : string; 
+  shaderError : string }
+
+type BoundShader = { compiled : CompiledShader; handle : int }
 
 type RenderModel = { 
   shader : BoundShader; 
+  euclShader : CompiledShader;
+  mercShader : CompiledShader;
   primitives : BoundPrimitiveGLData list; 
-  modelviewMatrixOpt : (int*Matrix4) option;
-  projectionMatrixOpt : (int*Matrix4) option;
-  lightSourceOpt : (int*Vector3) option;
+  uniforms : Map<string, int*SomeKindOfUniform>;  
   vaoHandleOpt : BoundVaoPrimitiveData list
 }

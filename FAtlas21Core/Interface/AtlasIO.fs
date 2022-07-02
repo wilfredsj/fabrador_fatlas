@@ -37,6 +37,8 @@ module AtlasIO =
     | "c" -> ClusterView { colours = TectonicColours; wireframeConnections = true } |> NewRenderMode |> ExactMatch
     | "d" -> ClusterView { colours = TectonicColours; wireframeConnections = false }|> NewRenderMode |> ExactMatch
     | "v" -> NewRenderMode MercatorView |> ExactMatch
+    | "[" -> UIInstruction ForceEuclidian |> ExactMatch
+    | "]" -> UIInstruction ForceMercator |> ExactMatch 
     | _ -> NoMatch
 
   let forceMessage m =

@@ -15,7 +15,8 @@ open ElmConstructor
 
 let testData = hexAsPrimitive [{ row = 0; dicol = 0; z = 1.0f}; { row = 0; dicol = 1; z= 0.8f}; { row = 1; dicol = 0; z= 1.2f}]
 
-let atlasCallback updateVertices = { makeVertex = Vector3; makeColour = Vector3; onUpdateCallback = updateVertices }
+let atlasCallback updateVertices eucl merc = 
+  { makeVertex = Vector3; makeColour = Vector3; onUpdateCallback = updateVertices; uiCallbacks = { forceEuclidian = eucl; forceMercator = merc }}
 
 let adaptedMsg s m =
   match m with

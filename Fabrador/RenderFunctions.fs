@@ -121,7 +121,7 @@ let bindIntoVAO (spd : BoundShader) (bhs : BoundPrimitiveGLData) =
   inVaoHandle vaoHandle myF ()
   { prim = bhs; vaoHandle = vaoHandle }
 
-let createShaders (spd : ShaderProgramData) =
+let compileShaders (spd : ShaderProgramData) (defaultUniforms : (string*SomeKindOfUniform) list) =
   let vertexShaderHandle = GLL.CreateShader(ShaderType.VertexShader)
   let fragmentShaderHandle = GLL.CreateShader(ShaderType.FragmentShader)
 
@@ -143,6 +143,39 @@ let createShaders (spd : ShaderProgramData) =
 
   let shaderError = GL.GetProgramInfoLog(shaderProgramHandle)
 
-  GLL.UseProgram(shaderProgramHandle)
+  { details = spd; handle = shaderProgramHandle ; vsError = vsError; fsError = fsError; shaderError = shaderError; defaultUniforms = defaultUniforms }
+  
 
-  { details = spd; handle = shaderProgramHandle ; vsError = vsError; fsError = fsError; shaderError = shaderError }
+
+let bindShader (cs :CompiledShader) =
+  let uniforms = 
+    cs.defaultUniforms
+    |> List.map(fun (unif_name, uf) ->
+      let location = GLL.GetUniformLocation(cs.handle, unif_name)
+      match uf with
+      | UM4(m, _) -> GLL.UniformMatrix4(location, false, ref m)
+      | UV3(v, _) -> GLL.Uniform3(location, v)
+      (unif_name, (location, uf)))
+    |> Map.ofList
+
+  GLL.UseProgram(cs.handle)
+
+  ({ compiled = cs; handle = cs.handle }, uniforms)
+
+let incrementUniform location u = 
+  match u with
+  | UV3(unif, fOpt) -> 
+    match fOpt with
+    | Some f -> 
+      let unif' = f unif
+      GL.Uniform3(location, unif')
+      UV3(unif', fOpt)
+    | None -> UV3(unif, fOpt)
+  | UM4(unif, fOpt) -> 
+    match fOpt with
+    | Some f -> 
+      let unif' = f unif
+      GL.UniformMatrix4(location, false, ref unif')
+      UM4(unif', fOpt)
+    | None -> UM4(unif, fOpt)
+

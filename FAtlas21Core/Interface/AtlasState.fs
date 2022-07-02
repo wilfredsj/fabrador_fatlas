@@ -96,7 +96,16 @@ module Interface =
       | Restart ->
         let ns = blankState state
         updateView ns
-        |> maybeUpdateCacheState ns        
+        |> maybeUpdateCacheState ns       
+      | UIInstruction uix ->
+        match uix with
+        | ForceEuclidian ->
+          state.callbacks.uiCallbacks.forceEuclidian()
+          state
+        | ForceMercator ->
+          state.callbacks.uiCallbacks.forceMercator()
+          state
+
       | NewRenderMode nrm ->
         let ns = { state with render = nrm }
         updateView ns
