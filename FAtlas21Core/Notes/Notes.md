@@ -32,4 +32,58 @@ Suggested approach:
 
 
 
+** General Design **
+
+Current situation, 
+FAtlas21Core has no dependencies
+Fabrador depends on OpenTK + FAtlas21Core
+
+Interface is 
+    'ModelInit -> 'Model
+    ((Vector3 [] * Vector3 [] * int [] * string) list -> unit) -> 'ModelInit
+    'Model -> PassedEvent<'Msg> -> 'Model
+    'Msg list
+        ->
+    ()
+
+There is some DI here... concretely:
+    AtlasCallback<Vector3, Vector3> -> AtlasState<Vector3, Vector3>
+    ((Vector3 [] * Vector3 [] * int [] * string) list -> unit) -> AtlasCallback<Vector3, Vector3>
+    AtlasState<Vector3, Vector3> -> PassedEvent<'Msg> -> AtlasState<Vector3, Vector3>
+    'Msg list
+        ->
+    ()
+
+What's the real API from the point of view of the application?
+
+  type A3V = float32*float32*float32
+  type AtlasCallbacks<'V,'C> = { makeVertex : A3V -> 'V; makeColour : A3V -> 'C; onUpdateCallback : (('V []*'C[]*int[]*string) list) -> unit }
+
+  the AtlasCallbacks instance is populated by FAbradador
+
+  meanwhile... about the keypresses
+
+type PassedEvent<'Msg> =
+  | KeyDown of char
+  | KeyEnter
+  | DirectMessage of 'Msg
+  | EventNoOp
+
+  this belongs to FAbrador
+  
+let adaptedMsg s m =
+  match m with
+  | DirectMessage m1 -> updateModel s m1
+  | KeyDown ch -> onkeyPress s ch
+  | KeyEnter -> onEnterPress s
+  | EventNoOp -> s
+
+    and this also belongs to FAbrador
+
+
+
+
+
+
+
 

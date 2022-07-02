@@ -15,8 +15,7 @@ let createElmWindow (modelMaker : 'ModelInit -> 'Model)
   nws.Size <- Vector2i(600, 800)
   nws.Title <- "Sandbox"
   let window = new ElmLikeWindow<'Msg,'Model>(gws, nws, None, updater)
-  let modelInit = callbackMaker window.changeVerticesTuples
-  let model = modelMaker modelInit 
+  let model =  (callbackMaker >> modelMaker) window.changeVerticesTuples
   
   let m' = List.fold (fun s m -> updater s (direct m)) model queue
 

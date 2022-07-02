@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <OutputType>Exe</OutputType>
+    <OutputType>Library</OutputType>
     <TargetFramework>netcoreapp3.1</TargetFramework>
   </PropertyGroup>
 
@@ -17,10 +17,6 @@
 
   <ItemGroup>
     <PackageReference Include="OpenTK" Version="4.6.7" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <ProjectReference Include="..\FAtlas21Core\FAtlas21Core.fsproj" />
   </ItemGroup>
 
 </Project>

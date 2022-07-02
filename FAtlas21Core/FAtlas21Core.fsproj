@@ -24,6 +24,7 @@
     <Compile Include="View\TriangleMeshViewFunctions.fs" />
     <Compile Include="View\TectonicViewFunctions.fs" />
     <Compile Include="Interface\AtlasStateTypes.fs" />
+    <Compile Include="Interface\AtlasViewFunctions.fs" />
     <Compile Include="Interface\AtlasIO.fs" />
     <Compile Include="Interface\AtlasState.fs" />
   </ItemGroup>
