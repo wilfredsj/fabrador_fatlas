@@ -59,7 +59,7 @@ What's the real API from the point of view of the application?
   type A3V = float32*float32*float32
   type AtlasCallbacks<'V,'C> = { makeVertex : A3V -> 'V; makeColour : A3V -> 'C; onUpdateCallback : (('V []*'C[]*int[]*string) list) -> unit }
 
-  the AtlasCallbacks instance is populated by FAbradador
+  the AtlasCallbacks instance is populated by Fabrador
 
   meanwhile... about the keypresses
 
@@ -80,8 +80,14 @@ let adaptedMsg s m =
 
     and this also belongs to FAbrador
 
-
-
+    -------------------
+          new design
+             
+        | Fabrador |
+                    ^--  
+                            | FAtlasUiExec |
+                    v--  
+        | FAtlas21Core |
 
 
 

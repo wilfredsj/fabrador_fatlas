@@ -23,6 +23,7 @@
     <Compile Include="View\MercatorViewFunctions.fs" />
     <Compile Include="View\TriangleMeshViewFunctions.fs" />
     <Compile Include="View\TectonicViewFunctions.fs" />
+    <Compile Include="View\ViewHelperFunctions.fs" />
     <Compile Include="Interface\AtlasStateTypes.fs" />
     <Compile Include="Interface\AtlasViewFunctions.fs" />
     <Compile Include="Interface\AtlasIO.fs" />

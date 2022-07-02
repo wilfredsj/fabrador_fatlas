@@ -90,3 +90,39 @@ module AtlasViewFunctions =
 
     state.callbacks.onUpdateCallback allElts
     newCache 
+
+  
+  let extractTriangleSet s = 
+    match s with
+    | IcosaDivision t -> t
+    | ClusterAssignment (cas, vc) -> cas.meshData
+    | ClusterFinished cf -> cf.meshData
+    | _ -> failwith <| sprintf "No triangles set for %A" s
+    
+  let extractClusterData s =
+    match s with
+    | ClusterAssignment (cas,_) -> renderCAS cas
+    | ClusterFinished cf -> renderCCS cf
+    | _ -> failwith <| sprintf "No cluster data for %A" s
+
+  let updateIcosaView cs state =
+    let colours = 
+      match cs with 
+      | GrayScale ->        uniformHue 20.0
+      | TectonicColours ->  tectonicColours <| extractClusterData state.model
+    solidViewIcosaSection colours state (extractTriangleSet state.model)
+        
+  let extractCompleteClusterData s =
+    match s with
+    | ClusterFinished cf -> cf
+    | _ -> failwith <| sprintf "No cluster data for %A" s
+        
+  let updateClusterView cs state =
+    let colours = 
+      match cs.colours with
+      | TectonicColours ->   (tectonicColours2 <| extractCompleteClusterData state.model)
+      | _ ->                 failwith "Bad render combination"
+    if cs.wireframeConnections then
+      solidAndWireViewIcosaSection colours state (extractCompleteClusterData state.model)
+    else
+      solidViewIcosaSectionNoWires colours state (extractCompleteClusterData state.model)

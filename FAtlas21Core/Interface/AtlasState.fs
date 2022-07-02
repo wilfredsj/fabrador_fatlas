@@ -42,44 +42,12 @@ module Interface =
     else
       defaultRenderMode state
 
-  let extractTriangleSet s = 
-    match s with
-    | IcosaDivision t -> t
-    | ClusterAssignment (cas, vc) -> cas.meshData
-    | ClusterFinished cf -> cf.meshData
-    | _ -> failwith <| sprintf "No triangles set for %A" s
-
-  let extractClusterData s =
-    match s with
-    | ClusterAssignment (cas,_) -> renderCAS cas
-    | ClusterFinished cf -> renderCCS cf
-    | _ -> failwith <| sprintf "No cluster data for %A" s
-
-  let extractCompleteClusterData s =
-    match s with
-    | ClusterFinished cf -> cf
-    | _ -> failwith <| sprintf "No cluster data for %A" s
 
   let updateView state = 
     let renderModeUsed = getRenderMode state
     match renderModeUsed with
-    | IcosaView cs ->
-      match cs with 
-      | GrayScale -> 
-        solidViewIcosaSection (uniformHue 20.0) state (extractTriangleSet state.model)
-      | TectonicColours ->
-        solidViewIcosaSection (tectonicColours <| extractClusterData state.model) state (extractTriangleSet state.model)
-    | ClusterView cs ->
-      let colours = 
-        match cs.colours with
-        | TectonicColours ->
-          (tectonicColours2 <| extractCompleteClusterData state.model)
-        | _ ->
-          failwith "Bad render combination"
-      if cs.wireframeConnections then
-        solidAndWireViewIcosaSection colours state (extractCompleteClusterData state.model)
-      else
-        solidViewIcosaSectionNoWires colours state (extractCompleteClusterData state.model)
+    | IcosaView cs ->       updateIcosaView cs state 
+    | ClusterView cs ->     updateClusterView cs state
     | MercatorView ->
         solidViewMercator state
         None
