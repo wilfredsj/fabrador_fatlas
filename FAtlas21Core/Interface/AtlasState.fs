@@ -98,13 +98,15 @@ module Interface =
         updateView ns
         |> maybeUpdateCacheState ns       
       | UIInstruction uix ->
-        match uix with
-        | ForceEuclidian ->
-          state.callbacks.uiCallbacks.forceEuclidian()
-          state
-        | ForceMercator ->
-          state.callbacks.uiCallbacks.forceMercator()
-          state
+        match state.callbacks.uiCallbackOpt with
+        | Some uiCallbacks ->
+          match uix with
+          | ForceEuclidian ->
+            uiCallbacks.forceEuclidian()
+          | ForceMercator ->
+            uiCallbacks.forceMercator()
+        | None -> ()
+        state
 
       | NewRenderMode nrm ->
         let ns = { state with render = nrm }

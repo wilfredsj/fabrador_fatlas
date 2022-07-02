@@ -10,7 +10,10 @@ open FAtlas.TriangleMeshTypes
 open FAtlas.TriangleMeshFunctions
 open FAtlas.CoordFunctions
 
-let emptyCallback = { makeVertex = (fun x -> 1); makeColour = (fun x -> 1); onUpdateCallback = fun x -> () }
+let emptyCallback = { makeVertex = (fun x -> 1); 
+                      makeColour = (fun x -> 1); 
+                      onUpdateCallback = fun x -> (); 
+                      uiCallbackOpt = None }
 
 
 

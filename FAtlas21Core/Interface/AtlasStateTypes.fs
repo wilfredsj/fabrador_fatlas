@@ -44,7 +44,7 @@ module AtlasStateTypes =
     makeVertex : A3V -> 'V; 
     makeColour : A3V -> 'C; 
     onUpdateCallback : (('V []*'C[]*int[]*string) list) -> unit;
-    uiCallbacks : UIUnitCallbacks}
+    uiCallbackOpt : UIUnitCallbacks Option}
   type AtlasCache = { vertexConverters : Map<int, VertexConverters> }
   let emptyCache = { vertexConverters = Map.empty }
   type AtlasState<'V,'C> = { render : RenderMode; model : ModelState; callbacks : AtlasCallbacks<'V,'C>; renderCache : AtlasCache}
