@@ -18,9 +18,16 @@ module AtlasStateTypes =
   | ClusterView of ClusterViewArgs
   | MercatorView
 
+  type RenderRotationAction =
+  | Rotate_X
+  | Rotate_Y
+  | Rotate_Z
+  | Rotate_Stop
+
   type UIAction =
   | ForceEuclidian
   | ForceMercator
+  | ForceRotate of RenderRotationAction
 
   type Message =
   | NoOp
@@ -39,7 +46,10 @@ module AtlasStateTypes =
   | ClusterFinished of CompleteClusterAssignment<(char*int) list>
 
   type A3V = float32*float32*float32
-  type UIUnitCallbacks = { forceEuclidian : unit -> unit; forceMercator : unit -> unit }
+  type UIUnitCallbacks = { 
+    forceEuclidian : unit -> unit; 
+    forceMercator : unit -> unit;
+    forceRotation : RenderRotationAction -> unit }
   type AtlasCallbacks<'V,'C> = { 
     makeVertex : A3V -> 'V; 
     makeColour : A3V -> 'C; 

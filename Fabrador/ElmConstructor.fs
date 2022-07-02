@@ -9,7 +9,9 @@ let createElmWindow (modelMaker : 'ModelInit -> 'Model)
                     (callbackMaker : 
                       ((Vector3 [] * Vector3 [] * int [] * string) list -> unit) -> 
                       (unit -> unit) ->
-                      (unit -> unit) -> 'ModelInit)
+                      (unit -> unit) -> 
+                      (RotationAxis -> unit) ->
+                      'ModelInit)
                     (updater : 'Model -> PassedEvent<'Msg> -> 'Model) 
                     (queue : 'Msg list) = 
   
@@ -19,7 +21,7 @@ let createElmWindow (modelMaker : 'ModelInit -> 'Model)
   nws.Title <- "Sandbox"
   let window = new ElmLikeWindow<'Msg,'Model>(gws, nws, None, updater)
   let model =  
-    callbackMaker window.changeVerticesTuples window.forceEuclidean window.forceMercator
+    callbackMaker window.changeVerticesTuples window.forceEuclidean window.forceMercator window.changeRotationAxis
     |> modelMaker
   
   let m' = List.fold (fun s m -> updater s (direct m)) model queue

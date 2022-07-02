@@ -105,6 +105,8 @@ module Interface =
             uiCallbacks.forceEuclidian()
           | ForceMercator ->
             uiCallbacks.forceMercator()
+          | ForceRotate rot ->
+            uiCallbacks.forceRotation rot
         | None -> ()
         state
 

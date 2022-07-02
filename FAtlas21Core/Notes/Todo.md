@@ -19,6 +19,7 @@
   //       -26: Separate out parts of AtlasViewFunctions that does not depend on AtlasStateTypes
   //       -18: 2D plot based on Mercator *Projection*
   //       -25: Implement some shader for 2D projection
+  //       -28: Change rotation directions
 
   // TODO:
   // AETHER-8:  assign base heights to clusters
@@ -30,7 +31,7 @@
   //       -15: unparameterised boundary
   //       -16: render mode to see raw boundary
   //       -17: render mode to see (r',th') from parameterised boundary
-  //       -28: Change rotation directions
+  //       -29: Solve gimbal lock in at least euclidean case
 
 
 

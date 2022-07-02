@@ -16,6 +16,12 @@ open RenderFunctions
 open GLL
 open HexaHelpers
 
+type RotationAxis = 
+  | FRAx_X
+  | FRAx_Y
+  | FRAx_Z
+  | FRAx_Stop
+
 let testData2 = hexAsPrimitive [{ row = 0; dicol = 0; z = 0.5f}; { row = 0; dicol = 1; z= 0.8f}; { row = 1; dicol = 0; z= 1.2f}; { row = -1; dicol = 0; z= 1.2f}]
 
 type PassedEvent<'Msg> =
@@ -168,6 +174,32 @@ void main(void)
     let (shader, uniforms) =  bindShader renderModel.mercShader
     renderModel <- { renderModel with shader = shader; uniforms = uniforms }
     ()
+
+  member o.changeRotationAxis rax =
+    let dTh = 0.005f
+    let rotation = 
+      match rax with
+      | FRAx_X -> Matrix4.CreateRotationX(dTh)
+      | FRAx_Y -> Matrix4.CreateRotationY(dTh)
+      | FRAx_Z -> Matrix4.CreateRotationZ(dTh)
+      | FRAx_Stop-> Matrix4.Identity
+
+    let multOp = fun (matrix : Matrix4) -> Matrix4.Mult(rotation, matrix)
+    let target_name = "modelview_matrix"
+    let newUnif = 
+      renderModel.uniforms
+      |> Map.find target_name
+      |> fun (i, unif) ->
+        match unif with
+        | UM4(mx, f) -> 
+          (i, UM4(mx, Some(multOp)))
+        | _ -> (i, unif)
+
+    let uniforms' = Map.add target_name newUnif renderModel.uniforms
+    renderModel <- { renderModel with uniforms = uniforms' }
+
+
+
 
   member o.changeVerticesTuples data = 
 

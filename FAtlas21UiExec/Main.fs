@@ -15,8 +15,21 @@ open ElmConstructor
 
 let testData = hexAsPrimitive [{ row = 0; dicol = 0; z = 1.0f}; { row = 0; dicol = 1; z= 0.8f}; { row = 1; dicol = 0; z= 1.2f}]
 
-let atlasCallback updateVertices eucl merc = 
-  { makeVertex = Vector3; makeColour = Vector3; onUpdateCallback = updateVertices; uiCallbackOpt = Some <| { forceEuclidian = eucl; forceMercator = merc }}
+let rotateConv = 
+  function
+  | Rotate_X -> FRAx_X
+  | Rotate_Y -> FRAx_Y
+  | Rotate_Z -> FRAx_Z
+  | Rotate_Stop -> FRAx_Stop
+  
+
+let atlasCallback updateVertices eucl merc rot = 
+  let uiCb = { 
+    forceEuclidian = eucl; 
+    forceMercator = merc 
+    forceRotation = rotateConv >> rot
+    }
+  { makeVertex = Vector3; makeColour = Vector3; onUpdateCallback = updateVertices; uiCallbackOpt = Some uiCb}
 
 let adaptedMsg s m =
   match m with

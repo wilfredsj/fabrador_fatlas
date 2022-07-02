@@ -37,6 +37,10 @@ module AtlasIO =
     | "c" -> ClusterView { colours = TectonicColours; wireframeConnections = true } |> NewRenderMode |> ExactMatch
     | "d" -> ClusterView { colours = TectonicColours; wireframeConnections = false }|> NewRenderMode |> ExactMatch
     | "v" -> NewRenderMode MercatorView |> ExactMatch
+    | "aa" -> UIInstruction (ForceRotate Rotate_X) |> ExactMatch
+    | "aw" -> UIInstruction (ForceRotate Rotate_Y) |> ExactMatch
+    | "aq" -> UIInstruction (ForceRotate Rotate_Z) |> ExactMatch
+    | "az" -> UIInstruction (ForceRotate Rotate_Stop) |> ExactMatch
     | "[" -> UIInstruction ForceEuclidian |> ExactMatch
     | "]" -> UIInstruction ForceMercator |> ExactMatch 
     | _ -> NoMatch
