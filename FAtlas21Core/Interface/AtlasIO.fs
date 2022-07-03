@@ -27,22 +27,28 @@ module AtlasIO =
   let partialMessage str =
     match str with
     | ParseRegex "^q(\d+)$" [newSeed] -> ReSeed (System.Int32.Parse newSeed) |> PartialMatch
-    | "qq" -> Restart |> ExactMatch
-    | "qw" -> Divide 1 |> ExactMatch
-    | "qee" -> ClusterInit None |> ExactMatch
-    | "qr" -> ClusterIterate 100 |> PartialMatch
-    | "qrr" -> ClusterIterate 10000 |> ExactMatch
-    | "z" -> IcosaView GrayScale       |> NewRenderMode |> ExactMatch
-    | "x" -> IcosaView TectonicColours |> NewRenderMode |> ExactMatch
-    | "c" -> ClusterView { colours = TectonicColours; wireframeConnections = true } |> NewRenderMode |> ExactMatch
-    | "d" -> ClusterView { colours = TectonicColours; wireframeConnections = false }|> NewRenderMode |> ExactMatch
-    | "v" -> NewRenderMode MercatorView |> ExactMatch
-    | "aa" -> UIInstruction (ForceRotate Rotate_X) |> ExactMatch
-    | "aw" -> UIInstruction (ForceRotate Rotate_Y) |> ExactMatch
-    | "aq" -> UIInstruction (ForceRotate Rotate_Z) |> ExactMatch
-    | "az" -> UIInstruction (ForceRotate Rotate_Stop) |> ExactMatch
-    | "[" -> UIInstruction ForceEuclidian |> ExactMatch
-    | "]" -> UIInstruction ForceMercator |> ExactMatch 
+    | "qq" ->                    Restart                     |> ExactMatch
+    | "qw" ->                    Divide 1                    |> ExactMatch
+    | "qee" ->                   ClusterInit None            |> ExactMatch
+    | "qr" ->                    ClusterIterate 100          |> PartialMatch
+    | "qrr" ->                   ClusterIterate 10000        |> ExactMatch
+    | "z" -> IcosaView GrayScale            |> NewRenderMode |> ExactMatch
+    | "x" -> IcosaView TectonicColours      |> NewRenderMode |> ExactMatch
+    | "c" -> { colours = TectonicColours; wireframeConnections = true } 
+                             |> ClusterView |> NewRenderMode |> ExactMatch
+    | "d" -> { colours = TectonicColours; wireframeConnections = false }
+                             |> ClusterView |> NewRenderMode |> ExactMatch
+    | "v" ->                   MercatorView |> NewRenderMode |> ExactMatch
+    | "aa" -> Rotate_X true  |> ForceRotate |> UIInstruction |> ExactMatch
+    | "aw" -> Rotate_Y true  |> ForceRotate |> UIInstruction |> ExactMatch
+    | "aq" -> Rotate_Z true  |> ForceRotate |> UIInstruction |> ExactMatch
+    | "ad" -> Rotate_X false |> ForceRotate |> UIInstruction |> ExactMatch
+    | "as" -> Rotate_Y false |> ForceRotate |> UIInstruction |> ExactMatch
+    | "ae" -> Rotate_Z false |> ForceRotate |> UIInstruction |> ExactMatch
+    | "az" ->    Rotate_Stop |> ForceRotate |> UIInstruction |> ExactMatch
+    | "ax" ->    Rotate_Stop |> ForceRotate |> UIInstruction |> ExactMatch
+    | "[" ->                 ForceEuclidian |> UIInstruction |> ExactMatch
+    | "]" ->                 ForceMercator  |> UIInstruction |> ExactMatch 
     | _ -> NoMatch
 
   let forceMessage m =

@@ -19,9 +19,9 @@ module AtlasStateTypes =
   | MercatorView
 
   type RenderRotationAction =
-  | Rotate_X
-  | Rotate_Y
-  | Rotate_Z
+  | Rotate_X of bool
+  | Rotate_Y of bool
+  | Rotate_Z of bool
   | Rotate_Stop
 
   type UIAction =

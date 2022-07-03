@@ -17,9 +17,9 @@ open GLL
 open HexaHelpers
 
 type RotationAxis = 
-  | FRAx_X
-  | FRAx_Y
-  | FRAx_Z
+  | FRAx_X of bool
+  | FRAx_Y of bool
+  | FRAx_Z of bool
   | FRAx_Stop
 
 let testData2 = hexAsPrimitive [{ row = 0; dicol = 0; z = 0.5f}; { row = 0; dicol = 1; z= 0.8f}; { row = 1; dicol = 0; z= 1.2f}; { row = -1; dicol = 0; z= 1.2f}]
@@ -140,7 +140,7 @@ void main(void)
        :: commonUniforms
     let euclideanUniforms = 
       ("modelview_matrix", UM4 (
-        Matrix4.LookAt(new Vector3(0.0f, 3.0f, 5.0f), new Vector3(0.0f, 0.0f, 0.0f), new Vector3(0.0f, 1.0f, 0.0f)), 
+        Matrix4.LookAt(new Vector3(0.0f, 2.0f, 3.0f), new Vector3(0.0f, 0.0f, 0.0f), new Vector3(0.0f, 1.0f, 0.0f)), 
           Some <| rotateProjection -0.005f))
       :: commonUniforms
     let msC = compileShaders mercatorShader mercatorUniforms
@@ -179,9 +179,9 @@ void main(void)
     let dTh = 0.005f
     let rotation = 
       match rax with
-      | FRAx_X -> Matrix4.CreateRotationX(dTh)
-      | FRAx_Y -> Matrix4.CreateRotationY(dTh)
-      | FRAx_Z -> Matrix4.CreateRotationZ(dTh)
+      | FRAx_X dir -> Matrix4.CreateRotationX(if dir then dTh else -dTh)
+      | FRAx_Y dir -> Matrix4.CreateRotationY(if dir then dTh else -dTh)
+      | FRAx_Z dir -> Matrix4.CreateRotationZ(if dir then dTh else -dTh)
       | FRAx_Stop-> Matrix4.Identity
 
     let multOp = fun (matrix : Matrix4) -> Matrix4.Mult(rotation, matrix)
@@ -280,6 +280,16 @@ void main(void)
       | Keys.X -> Some 'x'
       | Keys.Y -> Some 'y'
       | Keys.Z -> Some 'z'
+      | Keys.D1 -> Some '1'
+      | Keys.D2 -> Some '2'
+      | Keys.D3 -> Some '3'
+      | Keys.D4 -> Some '4'
+      | Keys.D5 -> Some '5'
+      | Keys.D6 -> Some '6'
+      | Keys.D7 -> Some '7'
+      | Keys.D8 -> Some '8'
+      | Keys.D9 -> Some '9'
+      | Keys.D0 -> Some '0'
       | Keys.LeftBracket -> Some '['
       | Keys.RightBracket -> Some ']'
       | _ -> None

@@ -17,9 +17,9 @@ let testData = hexAsPrimitive [{ row = 0; dicol = 0; z = 1.0f}; { row = 0; dicol
 
 let rotateConv = 
   function
-  | Rotate_X -> FRAx_X
-  | Rotate_Y -> FRAx_Y
-  | Rotate_Z -> FRAx_Z
+  | Rotate_X x -> FRAx_X x
+  | Rotate_Y x -> FRAx_Y x
+  | Rotate_Z x -> FRAx_Z x
   | Rotate_Stop -> FRAx_Stop
   
 

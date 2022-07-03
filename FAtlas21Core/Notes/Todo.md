@@ -20,6 +20,7 @@
   //       -18: 2D plot based on Mercator *Projection*
   //       -25: Implement some shader for 2D projection
   //       -28: Change rotation directions
+  //       -30: Reverse/Stop rotation direction
 
   // TODO:
   // AETHER-8:  assign base heights to clusters

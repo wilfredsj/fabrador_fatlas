@@ -278,15 +278,16 @@ module TectonicFunctions =
       
 
     let rec foldClusterBoundary' initialPair previousPoint listSoFar vertexUrl =
-      printfn "Hub = %s" <| vtxStr vertexUrl
-      printfn "NormHub = %s" <| (normalizeElement ts vertexUrl |> vtxStr)
-      printfn "Previous = %s" <| vtxStr previousPoint
-      printfn "NormPrev = %s" <| (normalizeElement ts previousPoint |> vtxStr)
-      printfn "Check hub is internal %b" <| ((Map.find vertexUrl lookup) = thisClusterId)
-      printfn "Boundary so far:"
+      if false then
+        printfn "Hub = %s" <| vtxStr vertexUrl
+        printfn "NormHub = %s" <| (normalizeElement ts vertexUrl |> vtxStr)
+        printfn "Previous = %s" <| vtxStr previousPoint
+        printfn "NormPrev = %s" <| (normalizeElement ts previousPoint |> vtxStr)
+        printfn "Check hub is internal %b" <| ((Map.find vertexUrl lookup) = thisClusterId)
+        printfn "Boundary so far:"
       
-      listSoFar
-      |> List.iter(printfn "%s" << bpStr)
+        listSoFar
+        |> List.iter(printfn "%s" << bpStr)
       let matchedStartingPoint =
         Some (previousPoint, vertexUrl) = initialPair
       if matchedStartingPoint then
@@ -305,11 +306,12 @@ module TectonicFunctions =
           getBearings hub samplePoint (fst >> urlToCartesian ts 1.0) neighboursAndIsInternal
           |> List.sortBy snd
         let [(_, consistencyBearing)] = getBearings hub samplePoint (urlToCartesian ts 1.0) [previousPoint]
-        printfn "Check %f" consistencyBearing
         let isInside = fun ((_, a), _) -> a = true
-        withBearings
-        |> List.iter(fun ((vtx, inflag), b) ->
-          printfn "%f (%b): %s " b inflag <| vtxStr vtx)
+        if false then
+          printfn "Check %f" consistencyBearing
+          withBearings
+          |> List.iter(fun ((vtx, inflag), b) ->
+            printfn "%f (%b): %s " b inflag <| vtxStr vtx)
         let outsideAction ((outUrl, _), _) =
           makeBoundaryPoint hub vertexUrl outUrl
         let insideAction acc ((inUrl, _), _) =
