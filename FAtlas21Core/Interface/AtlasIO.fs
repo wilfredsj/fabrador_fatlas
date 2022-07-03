@@ -33,12 +33,25 @@ module AtlasIO =
     | "qr" ->                    ClusterIterate 100          |> PartialMatch
     | "qrr" ->                   ClusterIterate 10000        |> ExactMatch
     | "z" -> IcosaView GrayScale            |> NewRenderMode |> ExactMatch
-    | "x" -> IcosaView TectonicColours      |> NewRenderMode |> ExactMatch
-    | "c" -> { colours = TectonicColours; wireframeConnections = true } 
+    | "xx" -> IcosaView (TectonicColours None)  |> NewRenderMode |> ExactMatch
+    | ParseRegex "^x(\d+)$" [clusterId] -> 
+          IcosaView (TectonicColours (Some (System.Int32.Parse clusterId)))  |> NewRenderMode |> PartialMatch
+
+    | "c" -> { colours = TectonicColours None; wireframeConnections = true } 
                              |> ClusterView |> NewRenderMode |> ExactMatch
-    | "d" -> { colours = TectonicColours; wireframeConnections = false }
+    | "d" -> { colours = TectonicColours None; wireframeConnections = false }
                              |> ClusterView |> NewRenderMode |> ExactMatch
-    | "v" ->                   MercatorView |> NewRenderMode |> ExactMatch
+
+
+    | "vv" ->JustBorder None |>  BorderView |> NewRenderMode |> ExactMatch
+    | "vb" ->JustBorder (Some -2) |>  BorderView |> NewRenderMode |> ExactMatch
+    | "vc" ->JustBorder (Some -1)|>  BorderView |> NewRenderMode |> ExactMatch
+    | ParseRegex "^v(\d+)$" [clusterId] -> 
+         JustBorder (Some (System.Int32.Parse clusterId))
+                             |>  BorderView |> NewRenderMode |> PartialMatch
+
+
+    | "m" ->                   MercatorView |> NewRenderMode |> ExactMatch
     | "aa" -> Rotate_X true  |> ForceRotate |> UIInstruction |> ExactMatch
     | "aw" -> Rotate_Y true  |> ForceRotate |> UIInstruction |> ExactMatch
     | "aq" -> Rotate_Z true  |> ForceRotate |> UIInstruction |> ExactMatch

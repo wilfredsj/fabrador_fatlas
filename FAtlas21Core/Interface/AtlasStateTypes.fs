@@ -8,15 +8,27 @@ module AtlasStateTypes =
 
   type ColourScheme =
   | GrayScale
-  | TectonicColours
+  | TectonicColours of int Option
 
   type ClusterViewArgs = { colours : ColourScheme; wireframeConnections : bool }
+
+  type BorderViewMode =
+  | JustBorder of int Option
 
   type RenderMode = 
   | BasicCoordinate
   | IcosaView of ColourScheme  
   | ClusterView of ClusterViewArgs
+  | BorderView of BorderViewMode
   | MercatorView
+
+  let sprintRenderMode rm =
+    match rm with
+    | BasicCoordinate -> "BasicCoordinate"
+    | IcosaView cs -> sprintf "IcosaView %A" cs
+    | ClusterView cs -> sprintf "ClusterView %A" cs
+    | BorderView cs -> sprintf "BorderView %A" cs
+    | MercatorView -> "MercatorView"
 
   type RenderRotationAction =
   | Rotate_X of bool

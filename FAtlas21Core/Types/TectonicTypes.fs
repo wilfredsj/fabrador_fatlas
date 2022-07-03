@@ -28,9 +28,23 @@ module TectonicTypes =
     connectedFaces : Set<int*int>
   }
   
-  type ClusterBoundaryPoint = { pt : Cartesian; inUrl : VertexUrl; outUrl : VertexUrl; radius : float; argument : float }
+  // This is a directed vector along the boundary
+  //     from inUrl
+  //       to outUrl
+  //     pt is the cartesian location of the midpoint.
+  type ClusterBoundaryPoint = { 
+    pt : Cartesian; 
+    inUrl : VertexUrl; 
+    outUrl : VertexUrl; 
+    radius : float; 
+    argument : float 
+  }
   let bpStr bp = sprintf "In: %s | Out: %s R=%f Th=%f" (vtxStr bp.inUrl) (vtxStr bp.outUrl) bp.radius bp.argument
-  type ClusterBoundary = { ref : Cartesian; hub : Cartesian; pts : ClusterBoundaryPoint list }
+  type ClusterBoundary = { 
+    ref : Cartesian; 
+    hub : Cartesian; 
+    pts : ClusterBoundaryPoint list 
+  }
 
   type CompleteClusterDatum = {
     id : int;
@@ -47,7 +61,11 @@ module TectonicTypes =
     connectedFaces : Set<int*int>
   }
 
-  type ClusterDataForRendering<'Key when 'Key : comparison>  = { meshData : TriangleSet<BasicPoint>; membership : Map<'Key, int>; numClusters : int}
+  type ClusterDataForRendering<'Key when 'Key : comparison> = { 
+    meshData : TriangleSet<BasicPoint>; 
+    membership : Map<'Key, int>; 
+    numClusters : int
+  }
 
   let renderCAS (cas : ClusterAssigmentState<'A>)= {
     meshData = cas.meshData; membership = cas.lookupFromKey; numClusters = cas.unfinishedClusters |> Array.length

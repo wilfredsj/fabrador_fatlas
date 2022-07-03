@@ -25,6 +25,8 @@ module ViewHelperFunctions =
   let grayscale mkColour i ij k = ((i * 79) % 71) |> float32 |> fun y -> (y / 71.0f) * 0.4f + 0.1f |> fun z -> (z,z,z) |> mkColour
   let allGray mkColour i ij k = 0.7f |> fun z -> (z,z,z) |> mkColour
   
+  // Each input set of indices is index *within its own slice*
+  // So the indices will be different in the aggregated output for i>1)
   let concat3 strGlType (tuples : ('a[]*'b[]*int [])[]) =
     let (c1,c2,c3) = tuples.[0]
     let n1 = tuples |> Array.fold(fun acc (a,_,_) -> Array.length(a) + acc) 0
@@ -49,6 +51,15 @@ module ViewHelperFunctions =
     |> function 
         | None -> grayscale mkColour i ij k
         | Some(c) -> uniformHue nc mkColour c ij k
+
+  let tectonicColoursFiltered j (clusterState : ClusterDataForRendering<'A>) mkColour i ij k =
+    let url = { t = i; i = fst ij; j = snd ij}
+    let key = urlToKey clusterState.meshData url
+    let nc = clusterState.numClusters |> fun x -> float (x - 1) 
+    Map.tryFind key clusterState.membership
+    |> function 
+        | Some(c) when c=j -> uniformHue nc mkColour c ij k
+        | _ -> grayscale mkColour i ij k
     
   let tectonicColours2 (clusterState : CompleteClusterAssignment<'A>) mkColour i ij k =
     let url = { t = i; i = fst ij; j = snd ij}

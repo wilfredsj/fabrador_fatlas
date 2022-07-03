@@ -108,5 +108,18 @@ module TectonicViewFunctions =
       |> Array.ofList
     
     (vertices, colours, vertexIndices)
+
+  let drawSingleBorderSection vertexMaker colourer (borderSection : ClusterBoundary) =
+    let borderArray = Array.ofList borderSection.pts
+    let points = borderArray |> Array.map(fun pt -> vertexMaker (float32 pt.pt.x, float32 pt.pt.y, float32 pt.pt.z))
+    let colours = borderArray |> Array.mapi colourer
+    let N = borderArray |> Array.length
+    let arrayIndices = 
+      borderSection.pts 
+      |> List.indexed 
+      |> List.collect (fun (i,_) -> [ i; (i+1) % N ])
+      |> Array.ofList
+    (points,colours, arrayIndices)
+    
     
 

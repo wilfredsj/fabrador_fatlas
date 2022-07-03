@@ -18,19 +18,23 @@ module Interface =
     match state.model with
     | Init 
     | IcosaDivision _ ->         IcosaView GrayScale
-    | ClusterAssignment _ ->     IcosaView TectonicColours
-    | ClusterFinished _ ->       ClusterView { colours = TectonicColours; wireframeConnections = true }
+    | ClusterAssignment _ ->     IcosaView (TectonicColours None)
+    | ClusterFinished _ ->       ClusterView { colours = (TectonicColours None); wireframeConnections = true }
   
   let isSupportedRenderState state =
     match state.render with
     | MercatorView ->      true
     | IcosaView GrayScale -> true
-    | IcosaView TectonicColours ->
+    | IcosaView (TectonicColours _) ->
       match state.model with
       | ClusterAssignment _
       | ClusterFinished _ -> true
       | _ -> false
     | ClusterView _ ->
+      match state.model with
+      | ClusterFinished _ -> true
+      | _ -> false
+    | BorderView _ ->
       match state.model with
       | ClusterFinished _ -> true
       | _ -> false
@@ -51,6 +55,7 @@ module Interface =
     | MercatorView ->
         solidViewMercator state
         None
+    | BorderView bvm -> updateBorderView bvm state
     | _ -> failwith "Unimplemented render mode"
 
   let maybeUpdateCacheState state renderCacheOpt = 
@@ -80,7 +85,25 @@ module Interface =
     let newModel = IcosaDivision data
     { state with model = newModel }
 
-    
+  let evaluateNewRenderMode (newRenderMode : RenderMode) (oldRenderMode : RenderMode) =
+    match newRenderMode with
+    | BorderView (JustBorder (Some x)) ->
+      if x < 0 then
+        match oldRenderMode with
+        | BorderView (JustBorder yOpt) ->
+          match yOpt with
+          | Some y -> 
+              if x = -2 then 
+                BorderView <| JustBorder (Some (y + 1))
+              else
+                BorderView <| JustBorder (Some (y - 1))
+          | None ->
+            BorderView <| JustBorder (Some 0)
+        | _ ->
+          BorderView <| JustBorder (Some 0)
+      else
+        newRenderMode
+    | _ -> newRenderMode
 
   let updateModel state message =
     if state.model = Init then
@@ -110,7 +133,9 @@ module Interface =
         | None -> ()
         state
 
-      | NewRenderMode nrm ->
+      | NewRenderMode nrmIn ->
+        let nrm = evaluateNewRenderMode nrmIn state.render
+        printfn "New Render Mode: %A" (sprintRenderMode nrm)
         let ns = { state with render = nrm }
         updateView ns
         |> maybeUpdateCacheState ns        

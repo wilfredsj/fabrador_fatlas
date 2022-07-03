@@ -21,18 +21,19 @@
   //       -25: Implement some shader for 2D projection
   //       -28: Change rotation directions
   //       -30: Reverse/Stop rotation direction
+  //       -15: unparameterised boundary
+  //       -9:  parameterise boundary of cluster (able to determine (r,th') coordinates
+  //       -16: render mode to see raw boundary
 
   // TODO:
   // AETHER-8:  assign base heights to clusters
-  //       -9:  parameterise boundary of cluster (able to determine (r,th') coordinates
   //       -10: assign momentum to cluster
   //       -11: stress function based on momentum
   //       -12: render mode for stress
   //       -13: render mode for base height
-  //       -15: unparameterised boundary
-  //       -16: render mode to see raw boundary
   //       -17: render mode to see (r',th') from parameterised boundary
   //       -29: Solve gimbal lock in at least euclidean case
+  //       -31: Find out why boundary of idx=8/idx=18 not correct in default RNG seed (1138)
 
 
 

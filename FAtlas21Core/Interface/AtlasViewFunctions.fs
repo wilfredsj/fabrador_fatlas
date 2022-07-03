@@ -104,25 +104,61 @@ module AtlasViewFunctions =
     | ClusterAssignment (cas,_) -> renderCAS cas
     | ClusterFinished cf -> renderCCS cf
     | _ -> failwith <| sprintf "No cluster data for %A" s
-
-  let updateIcosaView cs state =
-    let colours = 
-      match cs with 
-      | GrayScale ->        uniformHue 20.0
-      | TectonicColours ->  tectonicColours <| extractClusterData state.model
-    solidViewIcosaSection colours state (extractTriangleSet state.model)
         
   let extractCompleteClusterData s =
     match s with
     | ClusterFinished cf -> cf
     | _ -> failwith <| sprintf "No cluster data for %A" s
+    
+  let updateIcosaView cs state =
+    let colours = 
+      match cs with 
+      | GrayScale ->        uniformHue 20.0
+      | TectonicColours None ->  tectonicColours <| extractClusterData state.model
+      | TectonicColours (Some targetIdx) ->  
+        let cd = extractClusterData state.model
+        let targetId = targetIdx + 1
+        tectonicColoursFiltered targetId <| cd
+    solidViewIcosaSection colours state (extractTriangleSet state.model)
         
   let updateClusterView cs state =
     let colours = 
       match cs.colours with
-      | TectonicColours ->   (tectonicColours2 <| extractCompleteClusterData state.model)
+      | TectonicColours jOpt ->   (tectonicColours2 <| extractCompleteClusterData state.model)
       | _ ->                 failwith "Bad render combination"
     if cs.wireframeConnections then
       solidAndWireViewIcosaSection colours state (extractCompleteClusterData state.model)
     else
       solidViewIcosaSectionNoWires colours state (extractCompleteClusterData state.model)
+
+  let drawSimpleBorder mkVertex mkColour jOpt (clusterState : CompleteClusterAssignment<'A>) =
+    let nc = clusterState.allClusters |> Array.length
+    let clusterColour ci = rangeToFullSat 0.0 (float nc) (float ci) |> makeRGB|> mkColour
+    let renderData =
+      match jOpt with
+      | Some j ->
+        let j' = j % nc
+        //let colour = clusterColour j'
+        [| drawSingleBorderSection mkVertex (fun segNum _ -> clusterColour (segNum % nc)) clusterState.allClusters.[j'].orderedBorder |]
+      | None ->
+        clusterState.allClusters
+        |> Array.indexed
+        |> Array.fold(
+          fun acc (i,cluster) ->
+            let colour = clusterColour i
+            let newDraw = drawSingleBorderSection mkVertex (fun _ _ -> colour) cluster.orderedBorder
+            newDraw :: acc) []
+        |> Array.ofList
+    renderData
+
+  let updateBorderView bva state =
+    let (elts, newCache) = 
+      drawAllIcosaSections 0.8 grayscale state (extractTriangleSet state.model)
+    let borderSections =
+      match bva with
+      | JustBorder iOpt->
+        drawSimpleBorder state.callbacks.makeVertex state.callbacks.makeColour iOpt (extractCompleteClusterData state.model)
+      | _ -> [||]
+
+    state.callbacks.onUpdateCallback [concat3 "Triangles" elts; concat3 "Lines" borderSections]
+    newCache
