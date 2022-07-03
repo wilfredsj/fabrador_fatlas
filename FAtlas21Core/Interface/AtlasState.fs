@@ -55,7 +55,7 @@ module Interface =
     | MercatorView ->
         solidViewMercator state
         None
-    | BorderView bvm -> updateBorderView bvm state
+    | BorderView (bvm, iOpt) -> updateBorderView (bvm,iOpt) state
     | _ -> failwith "Unimplemented render mode"
 
   let maybeUpdateCacheState state renderCacheOpt = 
@@ -87,22 +87,26 @@ module Interface =
 
   let evaluateNewRenderMode (newRenderMode : RenderMode) (oldRenderMode : RenderMode) =
     match newRenderMode with
-    | BorderView (JustBorder (Some x)) ->
+    | BorderView (viewType, (Some x)) ->
       if x < 0 then
         match oldRenderMode with
-        | BorderView (JustBorder yOpt) ->
+        | BorderView (oldViewType, yOpt) ->
           match yOpt with
           | Some y -> 
               if x = -2 then 
-                BorderView <| JustBorder (Some (y + 1))
+                BorderView(oldViewType, Some (y + 1))
               else
-                BorderView <| JustBorder (Some (y - 1))
+                BorderView(oldViewType, Some (y - 1))
           | None ->
-            BorderView <| JustBorder (Some 0)
+            BorderView( oldViewType, Some 0)
         | _ ->
-          BorderView <| JustBorder (Some 0)
+          BorderView(viewType, Some 0)
       else
         newRenderMode
+    | BorderView (newViewType, None) ->
+        match oldRenderMode with
+        | BorderView (_, oldFilter) -> BorderView(newViewType, oldFilter)
+        | _                         -> newRenderMode
     | _ -> newRenderMode
 
   let updateModel state message =

@@ -25,6 +25,7 @@
   //       -9:  parameterise boundary of cluster (able to determine (r,th') coordinates
   //       -16: render mode to see raw boundary
   //       -31: Find out why boundary of idx=8/idx=18 not correct in default RNG seed (1138)
+  //       -17: render mode to see (r',th') from parameterised boundary *on the boundary*
 
   // TODO:
   // AETHER-8:  assign base heights to clusters
@@ -32,8 +33,8 @@
   //       -11: stress function based on momentum
   //       -12: render mode for stress
   //       -13: render mode for base height
-  //       -17: render mode to see (r',th') from parameterised boundary
   //       -29: Solve gimbal lock in at least euclidean case
+  //       -32: render mode to see (r',th') from parameterised boundary *on the icosagrid*
 
 
 

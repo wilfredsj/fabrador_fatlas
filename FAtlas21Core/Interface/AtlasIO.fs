@@ -43,11 +43,12 @@ module AtlasIO =
                              |> ClusterView |> NewRenderMode |> ExactMatch
 
 
-    | "vv" ->JustBorder None |>  BorderView |> NewRenderMode |> ExactMatch
-    | "vb" ->JustBorder (Some -2) |>  BorderView |> NewRenderMode |> ExactMatch
-    | "vc" ->JustBorder (Some -1)|>  BorderView |> NewRenderMode |> ExactMatch
+    | "vv" ->(JustBorder, None) |>  BorderView |> NewRenderMode |> ExactMatch
+    | "vf" ->(LocalCoordinates, None) |>  BorderView |> NewRenderMode |> ExactMatch
+    | "vb" ->(JustBorder, (Some -2)) |>  BorderView |> NewRenderMode |> ExactMatch
+    | "vc" ->(JustBorder, (Some -1))|>  BorderView |> NewRenderMode |> ExactMatch
     | ParseRegex "^v(\d+)$" [clusterId] -> 
-         JustBorder (Some (System.Int32.Parse clusterId))
+         (JustBorder ,Some (System.Int32.Parse clusterId))
                              |>  BorderView |> NewRenderMode |> PartialMatch
 
 

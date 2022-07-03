@@ -13,13 +13,14 @@ module AtlasStateTypes =
   type ClusterViewArgs = { colours : ColourScheme; wireframeConnections : bool }
 
   type BorderViewMode =
-  | JustBorder of int Option
+  | JustBorder
+  | LocalCoordinates
 
   type RenderMode = 
   | BasicCoordinate
   | IcosaView of ColourScheme  
   | ClusterView of ClusterViewArgs
-  | BorderView of BorderViewMode
+  | BorderView of BorderViewMode*(int Option)
   | MercatorView
 
   let sprintRenderMode rm =
@@ -27,7 +28,7 @@ module AtlasStateTypes =
     | BasicCoordinate -> "BasicCoordinate"
     | IcosaView cs -> sprintf "IcosaView %A" cs
     | ClusterView cs -> sprintf "ClusterView %A" cs
-    | BorderView cs -> sprintf "BorderView %A" cs
+    | BorderView (cs,i) -> sprintf "BorderView %A %A" cs i
     | MercatorView -> "MercatorView"
 
   type RenderRotationAction =

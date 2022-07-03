@@ -131,6 +131,26 @@ module AtlasViewFunctions =
     else
       solidViewIcosaSectionNoWires colours state (extractCompleteClusterData state.model)
 
+  
+  let drawParamBorder mkVertex mkColour jOpt (clusterState : CompleteClusterAssignment<'A>) =
+    let nc = clusterState.allClusters |> Array.length
+    let colour r th = 
+      { hue = th |> float32; sat = r |> float32; value = 1.0f } |> makeRGB |> mkColour
+    let renderData =
+      match jOpt with
+      | Some j ->
+        let j' = j % nc
+        [| drawBorderWithCoordinates mkVertex colour clusterState.allClusters.[j'].orderedBorder |]
+      | None ->
+        clusterState.allClusters
+        |> Array.indexed
+        |> Array.fold(
+          fun acc (i,cluster) ->
+            let newDraw = drawBorderWithCoordinates mkVertex colour cluster.orderedBorder
+            newDraw :: acc) []
+        |> Array.ofList
+    renderData
+
   let drawSimpleBorder mkVertex mkColour jOpt (clusterState : CompleteClusterAssignment<'A>) =
     let nc = clusterState.allClusters |> Array.length
     let clusterColour ci = rangeToFullSat 0.0 (float nc) (float ci) |> makeRGB|> mkColour
@@ -156,9 +176,10 @@ module AtlasViewFunctions =
       drawAllIcosaSections 0.8 grayscale state (extractTriangleSet state.model)
     let borderSections =
       match bva with
-      | JustBorder iOpt->
+      | (JustBorder, iOpt) ->
         drawSimpleBorder state.callbacks.makeVertex state.callbacks.makeColour iOpt (extractCompleteClusterData state.model)
-      | _ -> [||]
+      | (_, iOpt) -> 
+        drawParamBorder state.callbacks.makeVertex state.callbacks.makeColour iOpt (extractCompleteClusterData state.model)
 
     state.callbacks.onUpdateCallback [concat3 "Triangles" elts; concat3 "Lines" borderSections]
     newCache

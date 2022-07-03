@@ -109,6 +109,21 @@ module TectonicViewFunctions =
       |> Array.ofList
     
     (vertices, colours, vertexIndices)
+    
+  let drawBorderWithCoordinates vertexMaker colourer (borderSection : ClusterBoundary) =
+    let borderArray = Array.ofList borderSection.pts
+    let mvx pt = vertexMaker (float32 pt.x, float32 pt.y, float32 pt.z)
+    let points = borderArray |> Array.map(fun pt -> mvx pt.pt) 
+    
+    let colours = borderArray |> Array.map (fun pt -> colourer pt.radius pt.argument)
+    let N = borderArray |> Array.length
+    let indexer = fun (i,_) -> [ i; (i+1) % N]
+    let arrayIndices = 
+      borderSection.pts 
+      |> List.indexed 
+      |> List.collect indexer
+      |> Array.ofList
+    (points, colours, arrayIndices)
 
   let drawSingleBorderSection toCentroid vertexMaker colourer (borderSection : ClusterBoundary) =
     let borderArray = Array.ofList borderSection.pts
