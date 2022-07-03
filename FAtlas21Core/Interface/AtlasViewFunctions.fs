@@ -139,14 +139,14 @@ module AtlasViewFunctions =
       | Some j ->
         let j' = j % nc
         //let colour = clusterColour j'
-        [| drawSingleBorderSection mkVertex (fun segNum _ -> clusterColour (segNum % nc)) clusterState.allClusters.[j'].orderedBorder |]
+        [| drawSingleBorderSection true mkVertex (fun segNum _ -> clusterColour (segNum % nc)) clusterState.allClusters.[j'].orderedBorder |]
       | None ->
         clusterState.allClusters
         |> Array.indexed
         |> Array.fold(
           fun acc (i,cluster) ->
             let colour = clusterColour i
-            let newDraw = drawSingleBorderSection mkVertex (fun _ _ -> colour) cluster.orderedBorder
+            let newDraw = drawSingleBorderSection false mkVertex (fun _ _ -> colour) cluster.orderedBorder
             newDraw :: acc) []
         |> Array.ofList
     renderData

@@ -15,6 +15,7 @@
 
   <ItemGroup>
     <Compile Include="TriangleMeshTests.fs" />
+    <Compile Include="TectonicTests.fs" />
     <Compile Include="Program.fs" />
   </ItemGroup>
 

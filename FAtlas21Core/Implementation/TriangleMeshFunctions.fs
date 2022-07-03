@@ -178,8 +178,6 @@ module TriangleMeshFunctions =
         pts @ pts')
     let newKeys = newPoints' |> Seq.ofArray |> Seq.collect(id) 
     let lookup' = newKeys |> Seq.fold(fun m (k, t) -> m |> Map.add(k) t) lookup
-    printfn "Old length %i %i" basePoints.Length basePoints.[0].Length
-    printfn "New length %i %i" newPoints.Length newPoints.[0].Length
     (lookup', newTriangle)
 
   let singleDivideTriangleSet initCache makeEmpty getKey interpolator triangleSet =

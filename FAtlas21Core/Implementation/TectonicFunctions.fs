@@ -38,10 +38,7 @@ module TectonicFunctions =
   let divideIcosahedron ts =
     let initCache = Map.empty<(char*int) list, KeyedPoint<Coordinate>>
     let getKey t = t.key
-    let res = singleDivideTriangleSet initCache (fun ts -> makeEmptyTriangle ts.keys) getKey interpolate ts
-    sprintTriangleKeys res.triangles.[0]
-    |> List.iter System.Console.WriteLine
-    res
+    singleDivideTriangleSet initCache (fun ts -> makeEmptyTriangle ts.keys) getKey interpolate ts
 
   let makeCluster ts id hub = 
     let border = getVertexNeighboursFromUrl ts hub |> Set.ofList
@@ -275,10 +272,16 @@ module TectonicFunctions =
       let midPoint = scale (inPoint + outPoint) 0.5
       let radius = modulus (midPoint - centroid)
       { pt = midPoint; inUrl = inURL; outUrl = outUrl; radius = radius; argument = bearinger midPoint }
-      
 
-    let rec foldClusterBoundary' initialPair previousPoint listSoFar vertexUrl =
-      if false then
+  
+
+    // This function (2022-07-03) had some bug
+    // Most likely the issue is that the initial state is not well handled in the multi-valency case
+    // Update -- it appears to be fixed by duplicating the (only) external edge as last and first connection
+    //      ... in the valency=1 case
+
+    let rec foldClusterBoundary' verbose initialPair previousPoint listSoFar vertexUrl =
+      if verbose then
         printfn "Hub = %s" <| vtxStr vertexUrl
         printfn "NormHub = %s" <| (normalizeElement ts vertexUrl |> vtxStr)
         printfn "Previous = %s" <| vtxStr previousPoint
@@ -302,12 +305,19 @@ module TectonicFunctions =
           |> List.map(fun nurl -> (nurl, (Map.find nurl lookup) = thisClusterId ))
         let hub = urlToCartesian ts 1.0 vertexUrl
         let samplePoint = urlToCartesian ts 1.0 previousPoint
-        let withBearings = 
+        let withBearings' = 
           getBearings hub samplePoint (fst >> urlToCartesian ts 1.0) neighboursAndIsInternal
           |> List.sortBy snd
+        // Some kind of edge case here.... maybe we should duplicate the samplePoint as 0 AND tPI if the valency is only 1 (i.e. 2).
+        let countExternal = neighboursAndIsInternal |> List.filter(snd) |> List.length
+        let withBearings = 
+          if countExternal = 1 then
+            withBearings' @ [List.head withBearings']
+          else
+            withBearings'
         let [(_, consistencyBearing)] = getBearings hub samplePoint (urlToCartesian ts 1.0) [previousPoint]
         let isInside = fun ((_, a), _) -> a = true
-        if false then
+        if verbose  then
           printfn "Check %f" consistencyBearing
           withBearings
           |> List.iter(fun ((vtx, inflag), b) ->
@@ -315,10 +325,10 @@ module TectonicFunctions =
         let outsideAction ((outUrl, _), _) =
           makeBoundaryPoint hub vertexUrl outUrl
         let insideAction acc ((inUrl, _), _) =
-          foldClusterBoundary' i' vertexUrl acc inUrl
+          foldClusterBoundary' verbose i' vertexUrl acc inUrl
         accumulateSomethingButSkipHeadIfTrue listSoFar insideAction outsideAction isInside withBearings
 
-    let points = foldClusterBoundary' None referencePoint [] firstUrl
+    let points = foldClusterBoundary' false None referencePoint [] firstUrl
     { pts = points; hub = centroid; ref = referenceCart }
 
   let finaliseCluster boundaries (icd : IncompleteClusterDatum) = 
@@ -333,6 +343,7 @@ module TectonicFunctions =
     vtxs 
     |> List.map(urlToCart_local)
     |> centroid
+    |> normalize
     
   let finalize (u : ClusterAssigmentState<'A>) = 
     let ts = u.meshData

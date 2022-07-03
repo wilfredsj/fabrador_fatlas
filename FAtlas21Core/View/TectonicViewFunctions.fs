@@ -6,6 +6,7 @@ open TectonicFunctions
 open CoordFunctions
 open TriangleMeshToRender
 open ColourTypes
+open CoordTypes
 
 module TectonicViewFunctions =
 
@@ -109,15 +110,27 @@ module TectonicViewFunctions =
     
     (vertices, colours, vertexIndices)
 
-  let drawSingleBorderSection vertexMaker colourer (borderSection : ClusterBoundary) =
+  let drawSingleBorderSection toCentroid vertexMaker colourer (borderSection : ClusterBoundary) =
     let borderArray = Array.ofList borderSection.pts
-    let points = borderArray |> Array.map(fun pt -> vertexMaker (float32 pt.pt.x, float32 pt.pt.y, float32 pt.pt.z))
-    let colours = borderArray |> Array.mapi colourer
+    let mvx pt = vertexMaker (float32 pt.x, float32 pt.y, float32 pt.z)
+    let borderPts = borderSection.pts |> List.map(fun pt -> mvx pt.pt) 
+    let points = 
+      if toCentroid then
+        [mvx borderSection.hub] @ borderPts |> Array.ofList
+      else 
+        borderPts |> Array.ofList
+
+    let colours = points |> Array.mapi colourer
     let N = borderArray |> Array.length
+    let indexer = 
+      if toCentroid then
+        fun (i,_) -> [ i+1; (i+2) % N; 0; i+1 ]
+      else
+        fun (i,_) -> [ i; (i+1) % N]
     let arrayIndices = 
       borderSection.pts 
       |> List.indexed 
-      |> List.collect (fun (i,_) -> [ i; (i+1) % N ])
+      |> List.collect indexer
       |> Array.ofList
     (points,colours, arrayIndices)
     
