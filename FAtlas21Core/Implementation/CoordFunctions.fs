@@ -56,19 +56,6 @@ module CoordFunctions =
       |> List.fold myFold init
       |> fun (agg, mass) -> agg / (float mass)
 
-  let argument hub refAxis (x : Cartesian) =
-    let dx = x-hub
-    let dr = refAxis-hub
-    let cxr = cross dx dr
-    //// atan2
-    0
-     
-    // Get normal from surface
-    // refAxis x normal -> RHS vector
-    // dot dx ref
-    // dot dx rhs
-    // => atan2
-
   // atan2 returns in [-pi , pi]
   // more reasonably for sorting we want range [0, 2pi]
   let bearing hub dref dref2 (x : Cartesian) =
