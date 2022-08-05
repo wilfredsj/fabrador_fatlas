@@ -51,6 +51,17 @@ module ViewHelperFunctions =
     |> function 
         | None -> grayscale mkColour i ij k
         | Some(c) -> uniformHue nc mkColour c ij k
+        
+  let tectonicRThColours (clusterState : CompleteClusterAssignment<'A>) mkColour i ij k =
+    let url = { t = i; i = fst ij; j = snd ij}
+    let nc = clusterState.allClusters |> Array.length |> fun x -> float (x - 1) 
+    Map.tryFind url clusterState.clusterAssignments
+    |> function 
+        | None -> grayscale mkColour i ij k
+        | Some(c) -> 
+          let cluster = clusterState.allClusters.[c-1]
+          let h = cluster.orderedBorder.hub
+          let 
 
   let tectonicColoursFiltered j (clusterState : ClusterDataForRendering<'A>) mkColour i ij k =
     let url = { t = i; i = fst ij; j = snd ij}

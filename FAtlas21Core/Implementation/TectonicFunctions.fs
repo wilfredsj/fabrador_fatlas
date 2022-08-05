@@ -118,6 +118,134 @@ module TectonicFunctions =
       connectedFaces = Set.empty
     }
 
+  let pairwiseWithCyclic_Reversed l =
+    let rec pairwiseWithCyclic' first previous acc l' =
+      match l' with
+      | [] -> (previous, first) :: acc
+      | x :: tail -> 
+        let acc' = (previous, x) :: acc
+        pairwiseWithCyclic' first x acc' tail
+    match l with
+    | [] -> []
+    | h :: tail ->
+      pairwiseWithCyclic' h h [] tail
+      
+  let pairwiseWithCyclic a = pairwiseWithCyclic_Reversed a |> List.rev
+
+  let yInterp nbs newX =
+    nbs.y_lower + nbs.dy_dx * (newX - nbs.x_lower)
+
+  let truncate nbs max_x =
+    if max_x >= nbs.x_upper then
+      failwith <| sprintf "Bad normalization %f >= max, elt=%A" max_x nbs
+    else
+      { x_lower = nbs.x_lower; x_upper = max_x; 
+        y_lower = nbs.y_lower; y_upper = yInterp nbs max_x;
+        dy_dx = nbs.dy_dx }
+
+  let split nbs mid_x =
+    if mid_x >= nbs.x_upper or mid_x <= nbs.x_lower then
+      failwith <| sprintf "Bad normalization %f outside bounds, elt=%A" max_x nbs
+    else
+      let mid_y = yInterp nbs mid_x
+      let left=
+        { x_lower = nbs.x_lower; x_upper = mid_x; 
+          y_lower = nbs.x_lower; y_upper = mid_y;
+        dy_dx = nbs.dy_dx }
+      let right =
+        { x_lower = mid_x; x_upper = nbs.x_upper; 
+          y_lower = mid_y; y_upper = nbs.y_upper;
+        dy_dx = nbs.dy_dx }
+      (left, right)
+
+  let insertNormalizedSection sortedList inputElt=
+
+    let rec seekForLeft acc list currElt =
+      match list with
+      | elt :: tail ->
+        if elt.x_upper < currElt.x_lower then
+          //             |l...r|
+          //   |x.l x.r|
+          seekForLeft (elt :: acc) tail currElt
+        else
+          //         |l ...  r|
+          //   |x.l   x.r|
+          if elt.x_upper < currElt.x_upper then
+            let y_interp_left = yInterp elt currElt.x_lower
+            let y_interp_right = yInterp elt currElt.x_upper
+            if y_interp_left < currElt.y_lower then
+              if y_interp_right < currElt.y_upper then
+                let first = truncate elt currElt.x_lower
+                let (second, rem) = split currElt elt.x_upper
+                seekForLeft (second :: first :: acc) tail rem
+              else
+                let dy0 = currElt.y_lower - y_interp_left // >0
+                let d_dy_dx = currElt.dy_dx - elt.dy_dx // <0
+                let dx = -dy0 / d_dy_dx
+                let intercept = currElt.x_lower + dx
+                let (old_ab, old_c) = split elt intercept
+                let old_a = truncate old_ab currElt.x_lower
+
+                let (new_b, new_c) = split currElt intercept
+                let (_, rem) = split new_c elt.x_upper
+
+                //         new_b    old_c
+                //         old_b         new_c
+                //  old_a
+                //  
+                seekForLeft (old_c :: new_b :: old_a :: acc) tail rem
+            else //i.e. y_interp_left >= currElt.y_lower 
+              if y_interp_right < currElt.y_upper then
+                //               new_c new_d
+                //               old_c
+                //         old_b         
+                //         new_b
+                //  old_a
+                //  
+                let dy0 = currElt.y_lower - y_interp_left // <0
+                let d_dy_dx = currElt.dy_dx - elt.dy_dx // >0
+                let dx = -dy0 / d_dy_dx
+                let intercept = currElt.x_lower + dx
+                let old_ab = truncate elt intercept
+                let (_, new_cd) = split currElt intercept
+                let (new_c, rem) = split new_cd elt.x_upper
+                seekForLeft (new_c :: old_ab :: acc) tail rem
+              else
+                
+                //  old_a old_b olc_c
+                //        new_b new_c new_d
+                let (_, rem) = split currElt elt.x_upper
+                seekForLeft (elt:: acc) tail rem
+          else // elt.x_upper >= currElt.x_upper 
+            //         |l ...  r|
+            //     |x.l          x.r|
+
+                
+
+
+
+
+                  
+                  
+
+              
+            
+        
+    sortedList
+
+  let makeBoundaryData points centroid referenceCart = 
+    let normBoundary = 
+      points
+      |> pairwiseWithCyclic_Reversed
+      |> List.fold( fun s (l,r) ->
+        if r.argument <= l.argument then
+          s
+        else
+          insertNormalizedSection s (makeNBS_LR l r)) []
+      |> Array.ofList
+
+    { pts = points; hub = centroid; ref = referenceCart; normalizedBoundary = normBoundary }
+
   let getSetToPickFrom (rng : System.Random) cluster =
     if Set.isEmpty cluster.borderValencyThree |> not then
       (3, cluster.borderValencyThree)
@@ -329,7 +457,7 @@ module TectonicFunctions =
         accumulateSomethingButSkipHeadIfTrue listSoFar insideAction outsideAction isInside withBearings
 
     let points = foldClusterBoundary' false None referencePoint [] firstUrl
-    { pts = points; hub = centroid; ref = referenceCart }
+    makeBoundaryData points centroid referenceCart
 
   let finaliseCluster boundaries (icd : IncompleteClusterDatum) = 
     { 
@@ -369,3 +497,8 @@ module TectonicFunctions =
       connectedFaces = u.connectedFaces ;
       allClusters = u.allClusters |> Array.map(finaliseCluster boundaries)
     }
+
+  let get
+
+  let getLocalCoordinates borderSection localPoint =
+    

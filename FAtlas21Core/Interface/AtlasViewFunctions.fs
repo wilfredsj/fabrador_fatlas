@@ -119,6 +119,7 @@ module AtlasViewFunctions =
         let cd = extractClusterData state.model
         let targetId = targetIdx + 1
         tectonicColoursFiltered targetId <| cd
+      | TectonicLocalCoordColours ->  tectonicRThColours <| extractCompleteClusterData state.model
     solidViewIcosaSection colours state (extractTriangleSet state.model)
         
   let updateClusterView cs state =

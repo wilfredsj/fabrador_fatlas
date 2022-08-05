@@ -32,10 +32,12 @@ module AtlasIO =
     | "qee" ->                   ClusterInit None            |> ExactMatch
     | "qr" ->                    ClusterIterate 100          |> PartialMatch
     | "qrr" ->                   ClusterIterate 10000        |> ExactMatch
-    | "z" -> IcosaView GrayScale            |> NewRenderMode |> ExactMatch
-    | "xx" -> IcosaView (TectonicColours None)  |> NewRenderMode |> ExactMatch
+    | "z" ->  IcosaView GrayScale                    |> NewRenderMode |> ExactMatch
+    | "xx" -> IcosaView (TectonicColours None)       |> NewRenderMode |> ExactMatch
+    | "xc" -> IcosaView (TectonicLocalCoordColours)  |> NewRenderMode |> ExactMatch
     | ParseRegex "^x(\d+)$" [clusterId] -> 
-          IcosaView (TectonicColours (Some (System.Int32.Parse clusterId)))  |> NewRenderMode |> PartialMatch
+          IcosaView (TectonicColours (Some (System.Int32.Parse clusterId)))  
+                                                     |> NewRenderMode |> PartialMatch
 
     | "c" -> { colours = TectonicColours None; wireframeConnections = true } 
                              |> ClusterView |> NewRenderMode |> ExactMatch

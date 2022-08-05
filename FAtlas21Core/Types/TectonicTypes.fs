@@ -40,10 +40,30 @@ module TectonicTypes =
     argument : float 
   }
   let bpStr bp = sprintf "In: %s | Out: %s R=%f Th=%f" (vtxStr bp.inUrl) (vtxStr bp.outUrl) bp.radius bp.argument
+
+  type NormalizedBoundarySection = {
+    x_lower : float
+    x_upper : float
+    y_lower : float
+    y_upper : float
+    dy_dx : float
+  }
+  let makeNBS xl xu yl yu =
+    let dx = xu - xl
+    let dy = yu - yl
+    { x_lower = xl; x_upper = xu; y_lower = yl; y_upper = yu; dy_dx = dy / dx}
+    
+  let makeNBS_LR l r =
+    if l.argument > r.argument then
+      failwith <| sprintf "Bad normalization, left=%A right=%A" l r
+    else
+      makeNBS l.argument r.argument l.radius r.radius
+
   type ClusterBoundary = { 
     ref : Cartesian; 
     hub : Cartesian; 
     pts : ClusterBoundaryPoint list 
+    normalizedBoundary : NormalizedBoundarySection array
   }
 
   type CompleteClusterDatum = {

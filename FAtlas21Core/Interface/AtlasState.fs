@@ -30,6 +30,10 @@ module Interface =
       | ClusterAssignment _
       | ClusterFinished _ -> true
       | _ -> false
+    | IcosaView TectonicLocalCoordColours ->
+      match state.model with
+      | ClusterFinished _ -> true
+      | _ -> false
     | ClusterView _ ->
       match state.model with
       | ClusterFinished _ -> true
