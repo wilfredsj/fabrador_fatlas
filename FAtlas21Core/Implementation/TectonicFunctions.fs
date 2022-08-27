@@ -144,8 +144,8 @@ module TectonicFunctions =
         dy_dx = nbs.dy_dx }
 
   let split nbs mid_x =
-    if mid_x >= nbs.x_upper or mid_x <= nbs.x_lower then
-      failwith <| sprintf "Bad normalization %f outside bounds, elt=%A" max_x nbs
+    if mid_x >= nbs.x_upper || mid_x <= nbs.x_lower then
+      failwith <| sprintf "Bad normalization %f outside bounds, elt=%A" mid_x nbs
     else
       let mid_y = yInterp nbs mid_x
       let left=
@@ -158,23 +158,24 @@ module TectonicFunctions =
         dy_dx = nbs.dy_dx }
       (left, right)
 
-  let insertNormalizedSection sortedList inputElt=
-
+  let insertNormalizedSection sortedList inputElt =
     let rec seekForLeft acc list currElt =
       match list with
+      | [] -> [currElt]
       | elt :: tail ->
         if elt.x_upper < currElt.x_lower then
           //             |l...r|
           //   |x.l x.r|
           seekForLeft (elt :: acc) tail currElt
         else
-          //         |l ...  r|
-          //   |x.l   x.r|
+          // e.x_u >= c.x_l
           if elt.x_upper < currElt.x_upper then
+            //         |l ...  r|      (currElt)
+            //   |x.l   x.r|           (elt)
             let y_interp_left = yInterp elt currElt.x_lower
-            let y_interp_right = yInterp elt currElt.x_upper
+            let y_interp_right = yInterp currElt elt.x_upper
             if y_interp_left < currElt.y_lower then
-              if y_interp_right < currElt.y_upper then
+              if elt.y_upper < y_interp_right then
                 let first = truncate elt currElt.x_lower
                 let (second, rem) = split currElt elt.x_upper
                 seekForLeft (second :: first :: acc) tail rem
@@ -195,7 +196,7 @@ module TectonicFunctions =
                 //  
                 seekForLeft (old_c :: new_b :: old_a :: acc) tail rem
             else //i.e. y_interp_left >= currElt.y_lower 
-              if y_interp_right < currElt.y_upper then
+              if elt.y_upper < y_interp_right then
                 //               new_c new_d
                 //               old_c
                 //         old_b         
@@ -206,7 +207,7 @@ module TectonicFunctions =
                 let d_dy_dx = currElt.dy_dx - elt.dy_dx // >0
                 let dx = -dy0 / d_dy_dx
                 let intercept = currElt.x_lower + dx
-                let old_ab = truncate elt intercept
+                let old_ab = truncate elt currElt.x_lower
                 let (_, new_cd) = split currElt intercept
                 let (new_c, rem) = split new_cd elt.x_upper
                 seekForLeft (new_c :: old_ab :: acc) tail rem
@@ -215,36 +216,92 @@ module TectonicFunctions =
                 //  old_a old_b olc_c
                 //        new_b new_c new_d
                 let (_, rem) = split currElt elt.x_upper
-                seekForLeft (elt:: acc) tail rem
+                seekForLeft (elt :: acc) tail rem
           else // elt.x_upper >= currElt.x_upper 
             //         |l ...  r|
             //     |x.l          x.r|
+            let y_interp_left = yInterp elt currElt.x_lower
+            let y_interp_right = yInterp elt currElt.x_upper
+            if y_interp_left < currElt.y_lower then
+              if y_interp_right < currElt.y_upper then
+                let (first, second) = split elt currElt.x_lower
+                let (_, rem) = split second currElt.x_upper
+                rem :: second :: first :: acc
+              else
+                let dy0 = currElt.y_lower - y_interp_left // >0
+                let d_dy_dx = currElt.dy_dx - elt.dy_dx // <0
+                let dx = -dy0 / d_dy_dx
+                let intercept = currElt.x_lower + dx
+                let (old_ab, old_c) = split elt intercept
+                let old_a = truncate old_ab currElt.x_lower
 
-                
+                let (new_b, _) = split currElt intercept
+                //         new_b         old_c
+                //         old_b   new_c
+                //  old_a
+                //  
+                old_c :: new_b :: old_a :: acc
+            else
+              if y_interp_right < currElt.y_upper then
+                //               new_c old_d
+                //               old_c
+                //         old_b         
+                //         new_b
+                //  old_a
+                let dy0 = currElt.y_lower - y_interp_left // <0
+                let d_dy_dx = currElt.dy_dx - elt.dy_dx // >0
+                let dx = -dy0 / d_dy_dx
+                let intercept = currElt.x_lower + dx
+                let (old_ab, old_cd) = split elt currElt.x_lower
+                let (_, new_c) = split currElt intercept
+                let (_, old_d) = split old_cd intercept
+                old_d :: new_c :: old_ab :: acc
+              else
+                currElt :: acc
+    seekForLeft [] sortedList inputElt |> List.rev
 
-
-
-
-                  
-                  
-
-              
-            
-        
-    sortedList
-
-  let makeBoundaryData points centroid referenceCart = 
+  let makeBoundaryData points centroid referenceCart : ClusterBoundary = 
     let normBoundary = 
       points
       |> pairwiseWithCyclic_Reversed
-      |> List.fold( fun s (l,r) ->
-        if r.argument <= l.argument then
-          s
-        else
-          insertNormalizedSection s (makeNBS_LR l r)) []
+      |> List.fold( 
+        fun s (l,r) ->
+          let l' =
+            if r.argument <= l.argument then
+              l
+            else
+              { argument = l.argument + (2.0 * System.Math.PI); pt = l.pt; inUrl=l.inUrl; outUrl = l.outUrl; radius = l.radius }
+          insertNormalizedSection s (makeNBS_LR l' r)) []
       |> Array.ofList
 
     { pts = points; hub = centroid; ref = referenceCart; normalizedBoundary = normBoundary }
+
+  let lookupBoundary boundaryArr argument =
+    let size = Array.length boundaryArr
+    let arg' =
+      if Array.isEmpty boundaryArr then
+        failwith "Empty Boundary"
+      elif argument < boundaryArr.[0].x_lower then
+        argument + (2.0 * System.Math.PI)
+      elif argument < boundaryArr.[size-1].x_upper then
+        failwith "Boundary missing some bounds"
+      else
+        argument
+    let rec binSearchBdry (boundary : NormalizedBoundarySection array) lower uppern1 current a =
+      if a >= boundary.[current].x_lower then
+        if a <= boundary.[current].x_upper then
+          boundary.[current]
+        else
+          if current + 1 = uppern1 then
+            boundary.[current]
+          else
+            binSearchBdry boundary current uppern1 ((current + uppern1) / 2) a
+      else
+        if lower + 1 = current then
+          boundary.[current]
+        else
+          binSearchBdry boundary lower current ((lower + current) / 2) a
+    binSearchBdry boundaryArr 0 size (size/2) arg'
 
   let getSetToPickFrom (rng : System.Random) cluster =
     if Set.isEmpty cluster.borderValencyThree |> not then
@@ -498,7 +555,10 @@ module TectonicFunctions =
       allClusters = u.allClusters |> Array.map(finaliseCluster boundaries)
     }
 
-  let get
-
-  let getLocalCoordinates borderSection localPoint =
-    
+  let getLocalCoordinates cluster localPoint =
+    let b = makeBearinger cluster.hub cluster.ref
+    let th = b localPoint
+    let r = modulus (localPoint - cluster.hub)
+    let s = lookupBoundary cluster.normalizedBoundary th
+    let r_actual = yInterp s th
+    (r / r_actual, th)

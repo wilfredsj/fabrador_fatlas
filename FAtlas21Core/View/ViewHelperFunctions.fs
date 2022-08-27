@@ -8,6 +8,7 @@ open CoordFunctions
 open TriangleMeshFunctions
 
 open TriangleMeshToRender
+open ViewUtilityFunctions
 open TectonicViewFunctions
 
 
@@ -19,9 +20,6 @@ module ViewHelperFunctions =
   let getNp1TS ts = 
     getNp1 ts.triangles.[0]
     
-    
-  let uniformHue max mkColour i ij k = rangeToFullSat 0.0 max (float i) |> makeRGB|> mkColour
-  let uniformHue2 sat value max mkColour i ij k = rangeWithSatValue sat value 0.0 max (float i) |> makeRGB|> mkColour
   let grayscale mkColour i ij k = ((i * 79) % 71) |> float32 |> fun y -> (y / 71.0f) * 0.4f + 0.1f |> fun z -> (z,z,z) |> mkColour
   let allGray mkColour i ij k = 0.7f |> fun z -> (z,z,z) |> mkColour
   
@@ -58,10 +56,8 @@ module ViewHelperFunctions =
     Map.tryFind url clusterState.clusterAssignments
     |> function 
         | None -> grayscale mkColour i ij k
-        | Some(c) -> 
-          let cluster = clusterState.allClusters.[c-1]
-          let h = cluster.orderedBorder.hub
-          let 
+        | Some(c) -> localClusterView mkColour clusterState c url
+
 
   let tectonicColoursFiltered j (clusterState : ClusterDataForRendering<'A>) mkColour i ij k =
     let url = { t = i; i = fst ij; j = snd ij}

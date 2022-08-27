@@ -8,6 +8,8 @@ open TriangleMeshToRender
 open ColourTypes
 open CoordTypes
 
+open ViewUtilityFunctions
+
 module TectonicViewFunctions =
 
   let viewClusterToBorderNodes mkVertex mkColour filterOpt (data : CompleteClusterAssignment<'A>) =
@@ -148,6 +150,13 @@ module TectonicViewFunctions =
       |> List.collect indexer
       |> Array.ofList
     (points,colours, arrayIndices)
-    
+   
+  let localClusterView mkColour (clusterState : CompleteClusterAssignment<'A>) c url = 
+    let cluster = clusterState.allClusters.[c-1]
+    let cart = urlToCartesian clusterState.meshData 1.0 url
+    let (r,th) = getLocalCoordinates cluster.orderedBorder cart
+    let r' = min r 1.0
+    let th' = if th < 0.0 then th + (System.Math.PI * 2.0) else th
+    uniformHueSat (float32 r') 1.0f (System.Math.PI * 2.0) mkColour th'
     
 

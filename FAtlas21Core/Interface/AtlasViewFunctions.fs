@@ -12,6 +12,7 @@ open TectonicViewFunctions
 
 open ViewHelperFunctions
 open AtlasStateTypes
+open ViewUtilityFunctions
 
 module AtlasViewFunctions =
 
