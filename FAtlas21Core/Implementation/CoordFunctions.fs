@@ -84,6 +84,13 @@ module CoordFunctions =
     let (dref, dref2) = prepareBearing hub reference
     bearing hub dref dref2
 
+  let reconstitute_dx dref dref2 bearing =
+    (dref * cos bearing) + (dref2 * sin bearing)
+
+  let getReconstituted hub reference xs =
+    let (dref, dref2) = prepareBearing hub reference
+    List.map(reconstitute_dx dref dref2) xs
+
   // These are the 20 vertices of a dodecahedron
   let dodecahedronVertices =
     let phi = (1.0 + sqrt(5.0)) / 2.0;

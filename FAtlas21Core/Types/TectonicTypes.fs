@@ -95,3 +95,17 @@ module TectonicTypes =
   }
   
   let finishedAssigment u = Array.isEmpty u.unfinishedClusters
+  
+  type StressFunction =
+  | SmoothLinear
+  | PeakAtMid
+  | PeakAtSide of float
+
+  type GeoCluster = {
+    cluster : CompleteClusterDatum
+    heightBias : float
+    velocityMagnitude : float
+    velocityBearing : float
+    stressNeighboursSorted : list<float*(float*StressFunction)>
+  }
+
