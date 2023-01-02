@@ -392,7 +392,6 @@ module TriangleMeshFunctions =
       else
         elt
     normalizeElement' ts N (a,b,c) elt
-
   
   let rec getEdgeInterior ts N t (oe : OrientedEdge) idx =
     if idx = 0 || idx = N then

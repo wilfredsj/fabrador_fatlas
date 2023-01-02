@@ -20,6 +20,7 @@
     <Compile Include="Implementation\TriangleInterpolationFunctions.fs" />
     <Compile Include="Implementation\TectonicFunctions.fs" />
     <Compile Include="Implementation\SphereMeshFunctions.fs" />
+    <Compile Include="Implementation\TectonicFunctionsNonProd.fs" />
     <Compile Include="View\ViewUtilityFunctions.fs" />
     <Compile Include="View\MercatorViewFunctions.fs" />
     <Compile Include="View\TriangleMeshViewFunctions.fs" />

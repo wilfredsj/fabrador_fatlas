@@ -48,14 +48,18 @@ module AtlasViewFunctions =
     let abc = asArrays state.callbacks.makeVertex toSimpleCart (colourer state.callbacks.makeColour i) converters ts.frame t
     (abc, rco')
 
-  let drawAllIcosaSections r colourer state ts =
+  let drawAllIcosaSections iOpt r colourer state ts =
     ts.triangles 
     |> Array.indexed
+    |> fun tsi ->
+      match iOpt with 
+      | Some i -> [| tsi.[i] |]
+      | None -> tsi
     |> Array.mapFold (drawIcosaSection r colourer state ts) None
 
-  let solidViewIcosaSection colourer state ts =
+  let solidViewIcosaSection iOpt colourer state ts =
     let (elts, newCache) = 
-      drawAllIcosaSections 1.0 colourer state ts
+      drawAllIcosaSections iOpt 1.0 colourer state ts
     state.callbacks.onUpdateCallback [concat3 "Triangles" elts]
     newCache 
 
@@ -72,7 +76,7 @@ module AtlasViewFunctions =
   let solidViewIcosaSectionNoWires wireColourer state (ccs : CompleteClusterAssignment<'A>) =
     let ts = ccs.meshData
     let (solid, newCache) =
-      drawAllIcosaSections 0.6 wireColourer state ts
+      drawAllIcosaSections None 0.6 wireColourer state ts
         
     
     state.callbacks.onUpdateCallback [concat3 "Triangles" solid]
@@ -84,7 +88,7 @@ module AtlasViewFunctions =
     let (w1,w2,w3) = viewClusterToBorderNodes state.callbacks.makeVertex state.callbacks.makeColour None ccs
     let lineSection = (w1,w2,w3,"Lines")
     let (solid, newCache) =
-      drawAllIcosaSections 0.6 (tectonicColours2 ccs) state ts
+      drawAllIcosaSections None 0.6 (tectonicColours2 ccs) state ts
     
     let allElts =
       [concat3 "Triangles" solid; lineSection]
@@ -111,7 +115,7 @@ module AtlasViewFunctions =
     | ClusterFinished cf -> cf
     | _ -> failwith <| sprintf "No cluster data for %A" s
     
-  let updateIcosaView cs state =
+  let updateIcosaView iOpt cs state =
     let colours = 
       match cs with 
       | GrayScale ->        uniformHue 20.0
@@ -120,8 +124,11 @@ module AtlasViewFunctions =
         let cd = extractClusterData state.model
         let targetId = targetIdx + 1
         tectonicColoursFiltered targetId <| cd
-      | TectonicLocalCoordColours ->  tectonicRThColours <| extractCompleteClusterData state.model
-    solidViewIcosaSection colours state (extractTriangleSet state.model)
+      | TectonicLocalCoordColours None ->  tectonicRThColours (extractTriangleSet state.model) None <| extractCompleteClusterData state.model
+      | TectonicLocalCoordColours (Some targetIdx) ->  
+          let targetId = targetIdx + 1
+          tectonicRThColours (extractTriangleSet state.model) (Some targetId) <| extractCompleteClusterData state.model
+    solidViewIcosaSection iOpt colours state (extractTriangleSet state.model)
         
   let updateClusterView cs state =
     let colours = 
@@ -175,7 +182,7 @@ module AtlasViewFunctions =
 
   let updateBorderView bva state =
     let (elts, newCache) = 
-      drawAllIcosaSections 0.8 grayscale state (extractTriangleSet state.model)
+      drawAllIcosaSections None 0.8 grayscale state (extractTriangleSet state.model)
     let borderSections =
       match bva with
       | (JustBorder, iOpt) ->

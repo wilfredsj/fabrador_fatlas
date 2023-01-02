@@ -27,6 +27,7 @@
   //       -31: Find out why boundary of idx=8/idx=18 not correct in default RNG seed (1138)
   //       -17: render mode to see (r',th') from parameterised boundary *on the boundary*
   //       -32: render mode to see (r',th') from parameterised boundary *on the icosagrid*
+  //       -33: Same as -32 but apparently done again??
 
   // TODO:
   // AETHER-8:  assign base heights to clusters

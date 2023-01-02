@@ -50,13 +50,14 @@ module ViewHelperFunctions =
         | None -> grayscale mkColour i ij k
         | Some(c) -> uniformHue nc mkColour c ij k
         
-  let tectonicRThColours (clusterState : CompleteClusterAssignment<'A>) mkColour i ij k =
-    let url = { t = i; i = fst ij; j = snd ij}
+  let tectonicRThColours ts jOpt (clusterState : CompleteClusterAssignment<'A>) mkColour i ij k =
+    let jUsed = jOpt |> Option.defaultValue -1
+    let url = { t = i; i = fst ij; j = snd ij} |> normalizeElement ts
     let nc = clusterState.allClusters |> Array.length |> fun x -> float (x - 1) 
     Map.tryFind url clusterState.clusterAssignments
     |> function 
-        | None -> grayscale mkColour i ij k
-        | Some(c) -> localClusterView mkColour clusterState c url
+      | Some(c) when c=jUsed || jUsed < 0 -> localClusterView mkColour clusterState c url
+      | _ -> grayscale mkColour i ij k
 
 
   let tectonicColoursFiltered j (clusterState : ClusterDataForRendering<'A>) mkColour i ij k =

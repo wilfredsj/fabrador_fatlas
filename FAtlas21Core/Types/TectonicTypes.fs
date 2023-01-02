@@ -63,7 +63,7 @@ module TectonicTypes =
     ref : Cartesian; 
     hub : Cartesian; 
     pts : ClusterBoundaryPoint list 
-    normalizedBoundary : NormalizedBoundarySection array
+    normalizedBoundary : (float*(float*NormalizedBoundarySection)) array
   }
 
   type CompleteClusterDatum = {

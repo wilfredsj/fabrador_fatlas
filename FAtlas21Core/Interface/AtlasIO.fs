@@ -34,11 +34,25 @@ module AtlasIO =
     | "qrr" ->                   ClusterIterate 10000        |> ExactMatch
     | "z" ->  IcosaView GrayScale                    |> NewRenderMode |> ExactMatch
     | "xx" -> IcosaView (TectonicColours None)       |> NewRenderMode |> ExactMatch
-    | "xc" -> IcosaView (TectonicLocalCoordColours)  |> NewRenderMode |> ExactMatch
-    | ParseRegex "^x(\d+)$" [clusterId] -> 
+    | ParseRegex "^x(\d+)x$" [clusterId] -> 
           IcosaView (TectonicColours (Some (System.Int32.Parse clusterId)))  
-                                                     |> NewRenderMode |> PartialMatch
-
+                                                    |> NewRenderMode |> ExactMatch
+    | ParseRegex "^x(\d+)$" [clusterId] -> 
+      IcosaView (TectonicColours (Some (System.Int32.Parse clusterId)))  
+                                                  |> NewRenderMode |> PartialMatch
+    | ParseRegex "^x(\d+)a(\d+)x$" [clusterId; faceId] -> 
+      IcosaViewFiltered ((TectonicColours (Some (System.Int32.Parse clusterId))), System.Int32.Parse faceId)
+                                                |> NewRenderMode |> ExactMatch
+    | ParseRegex "^xa(\d+)x$" [faceId] -> 
+      IcosaViewFiltered (TectonicColours None, System.Int32.Parse faceId)
+                                                |> NewRenderMode |> ExactMatch
+    | "xc" -> IcosaView (TectonicLocalCoordColours None)  |> NewRenderMode |> ExactMatch
+    | ParseRegex "^x(\d+)c$" [clusterId] -> 
+          IcosaView (TectonicLocalCoordColours (Some (System.Int32.Parse clusterId)))  
+                                                     |> NewRenderMode |> ExactMatch
+    | ParseRegex "^xa(\d+)c$" [faceId] -> 
+      IcosaViewFiltered (TectonicLocalCoordColours None, System.Int32.Parse faceId)
+                                                |> NewRenderMode |> ExactMatch
     | "c" -> { colours = TectonicColours None; wireframeConnections = true } 
                              |> ClusterView |> NewRenderMode |> ExactMatch
     | "d" -> { colours = TectonicColours None; wireframeConnections = false }
@@ -74,7 +88,8 @@ module AtlasIO =
     | NoMatch -> NoOp
 
   let fullMessage pm =
-    ({chars = ""}, forceMessage (partialMessage pm.chars))
+    let msg = forceMessage (partialMessage pm.chars)
+    ({chars = ""}, msg)
 
   let addToMessage pm ch = 
     let newStr = System.String.Concat [pm.chars; string ch]

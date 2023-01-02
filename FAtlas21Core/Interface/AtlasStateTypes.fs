@@ -9,7 +9,7 @@ module AtlasStateTypes =
   type ColourScheme =
   | GrayScale
   | TectonicColours of int Option
-  | TectonicLocalCoordColours 
+  | TectonicLocalCoordColours of int Option
 
   type ClusterViewArgs = { colours : ColourScheme; wireframeConnections : bool }
 
@@ -20,6 +20,7 @@ module AtlasStateTypes =
   type RenderMode = 
   | BasicCoordinate
   | IcosaView of ColourScheme  
+  | IcosaViewFiltered of ColourScheme*int
   | ClusterView of ClusterViewArgs
   | BorderView of BorderViewMode*(int Option)
   | MercatorView
@@ -28,6 +29,7 @@ module AtlasStateTypes =
     function
     | BasicCoordinate -> "BasicCoordinate"
     | IcosaView cs -> sprintf "IcosaView %A" cs
+    | IcosaViewFiltered (cs,i)-> sprintf "IcosaViewFiltered %A %i" cs i
     | ClusterView cs -> sprintf "ClusterView %A" cs
     | BorderView (cs,i) -> sprintf "BorderView %A %A" cs i
     | MercatorView -> "MercatorView"

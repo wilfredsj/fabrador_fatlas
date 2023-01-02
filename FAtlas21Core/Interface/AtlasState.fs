@@ -30,7 +30,16 @@ module Interface =
       | ClusterAssignment _
       | ClusterFinished _ -> true
       | _ -> false
-    | IcosaView TectonicLocalCoordColours ->
+    | IcosaViewFiltered ((TectonicColours _), _) ->
+      match state.model with
+      | ClusterAssignment _
+      | ClusterFinished _ -> true
+      | _ -> false
+    | IcosaView (TectonicLocalCoordColours _)->
+      match state.model with
+      | ClusterFinished _ -> true
+      | _ -> false
+    | IcosaViewFiltered ((TectonicLocalCoordColours _), _) ->
       match state.model with
       | ClusterFinished _ -> true
       | _ -> false
@@ -54,7 +63,8 @@ module Interface =
   let updateView state = 
     let renderModeUsed = getRenderMode state
     match renderModeUsed with
-    | IcosaView cs ->       updateIcosaView cs state 
+    | IcosaView cs ->       updateIcosaView None cs state 
+    | IcosaViewFiltered (cs,i) ->       updateIcosaView (Some i) cs state 
     | ClusterView cs ->     updateClusterView cs state
     | MercatorView ->
         solidViewMercator state
