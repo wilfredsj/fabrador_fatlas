@@ -28,6 +28,7 @@
   //       -17: render mode to see (r',th') from parameterised boundary *on the boundary*
   //       -32: render mode to see (r',th') from parameterised boundary *on the icosagrid*
   //       -33: Same as -32 but apparently done again??
+  //       -34: Seems non-mercator projection is broken (GL function call ordering)
 
   // TODO:
   // AETHER-8:  assign base heights to clusters
@@ -36,7 +37,6 @@
   //       -12: render mode for stress
   //       -13: render mode for base height
   //       -29: Solve gimbal lock in at least euclidean case
-
 
 
 

@@ -144,10 +144,11 @@ let compileShaders (spd : ShaderProgramData) (defaultUniforms : (string*SomeKind
   let shaderError = GL.GetProgramInfoLog(shaderProgramHandle)
 
   { details = spd; handle = shaderProgramHandle ; vsError = vsError; fsError = fsError; shaderError = shaderError; defaultUniforms = defaultUniforms }
-  
-
 
 let bindShader (cs :CompiledShader) =
+  // CG 20230107 - UseProgram needs to be called before the Uniform functions
+  GLL.UseProgram(cs.handle)
+
   let uniforms = 
     cs.defaultUniforms
     |> List.map(fun (unif_name, uf) ->
@@ -158,7 +159,6 @@ let bindShader (cs :CompiledShader) =
       (unif_name, (location, uf)))
     |> Map.ofList
 
-  GLL.UseProgram(cs.handle)
 
   ({ compiled = cs; handle = cs.handle }, uniforms)
 

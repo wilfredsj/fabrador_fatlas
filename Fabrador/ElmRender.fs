@@ -118,8 +118,13 @@ void main(void)
   let initModel aspectRatio =
     let mercatorShader = makeShader vertexShaderSource_MercatorProjection fragmentShaderSource
     let euclideanShader = makeShader vertexShaderSource fragmentShaderSource
-
-
+    
+    
+    // Recap on how these uniforms are used later:
+    //       let location = GLL.GetUniformLocation(cs.handle, unif_name)
+    //       match uf with
+    //       | UM4(m, _) -> GLL.UniformMatrix4(location, false, ref m)
+    //       | UV3(v, _) -> GLL.Uniform3(location, v)
     let commonUniforms = 
       [
         ("projection_matrix", 
@@ -138,21 +143,23 @@ void main(void)
         Matrix4.LookAt(new Vector3(0.0f, 0.0f, 0.2f), new Vector3(0.0f, 0.0f, 0.0f), new Vector3(0.0f, 1.0f, 0.0f)), 
         Some <| rotateProjection -0.005f))
        :: commonUniforms
+
     let euclideanUniforms = 
       ("modelview_matrix", UM4 (
-        Matrix4.LookAt(new Vector3(0.0f, 2.0f, 3.0f), new Vector3(0.0f, 0.0f, 0.0f), new Vector3(0.0f, 1.0f, 0.0f)), 
+        Matrix4.LookAt(new Vector3(0.0f, 3.0f, 5.0f), new Vector3(0.0f, 0.0f, 0.0f), new Vector3(0.0f, 1.0f, 0.0f)), 
           Some <| rotateProjection -0.005f))
       :: commonUniforms
     let msC = compileShaders mercatorShader mercatorUniforms
     let esC = compileShaders euclideanShader euclideanUniforms
     
-    let (shader, uniforms) =  bindShader msC
+    let (shader, uniforms) =  bindShader esC
     { shader = shader;
       euclShader = esC;
       mercShader = msC;
       primitives = []; 
       uniforms = uniforms;
       vaoHandleOpt = [] }
+
 
 
   let mutable renderModel : RenderModel = initModel 0.75f
@@ -168,12 +175,10 @@ void main(void)
   member o.forceEuclidean () =    
     let (shader, uniforms) =  bindShader renderModel.euclShader
     renderModel <- { renderModel with shader = shader; uniforms = uniforms }
-    ()
     
   member o.forceMercator () =
     let (shader, uniforms) =  bindShader renderModel.mercShader
     renderModel <- { renderModel with shader = shader; uniforms = uniforms }
-    ()
 
   member o.changeRotationAxis rax =
     let dTh = 0.005f
@@ -197,9 +202,6 @@ void main(void)
 
     let uniforms' = Map.add target_name newUnif renderModel.uniforms
     renderModel <- { renderModel with uniforms = uniforms' }
-
-
-
 
   member o.changeVerticesTuples data = 
 
@@ -237,10 +239,6 @@ void main(void)
     let height = o.ClientRectangle.Size.Y
     let aspectRatio = float32 width / float32 height
 
-    //modelOpt <- Some(initModel aspectRatio)
-    
-    //primOvd
-    //|> Option.iter(o.changeVertices)
 
     GLL.Enable(EnableCap.DepthTest)
     GL.ClearColor(System.Drawing.Color.MidnightBlue)
