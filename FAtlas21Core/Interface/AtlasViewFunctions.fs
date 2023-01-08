@@ -138,8 +138,10 @@ module AtlasViewFunctions =
         tectonicRThColours (extractTriangleSet state.model) (Some targetId) <| extractCompleteClusterData state.model
       | TectonicStressColours iOpt -> 
         tectonicStressColours (extractTriangleSet state.model) (iOpt |> Option.map(fun i -> i+1)) <| extractTectonicData state.model
-      | TectonicHeightBiasColours iOpt ->
-        failwith "nyi"
+      | TectonicHeightBiasColours (iOpt, hbType) ->
+        match hbType with
+        | HB_Flat -> tectonicFlatHeight (extractTriangleSet state.model) (iOpt |> Option.map(fun i -> i+1)) <| extractTectonicData state.model
+        | _ -> failwith "nyi"
 
     solidViewIcosaSection iOpt colours state (extractTriangleSet state.model)
         

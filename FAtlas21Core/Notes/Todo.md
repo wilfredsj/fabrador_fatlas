@@ -34,13 +34,16 @@
   //       -11: stress function based on momentum
   //       -12: render mode for stress
   //       -36: stress should be based on dot of dV with dX
+  //       -13: render mode for base height
 
 
   // TODO:
   // AETHER
-  //       -13: render mode for base height
   //       -29: Solve gimbal lock in at least euclidean case
   //       -35: Some kind of legend for colour scale
+  //       -37: render mode for flat interpolated (zero-stress) height
+  //       -38: implement API to get stressed height for from the isogrid
+  //       -39: render mode for stressed height
 
 
 

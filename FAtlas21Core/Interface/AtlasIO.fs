@@ -55,7 +55,7 @@ module AtlasIO =
       IcosaViewFiltered (TectonicLocalCoordColours None, System.Int32.Parse faceId)
                                                 |> NewRenderMode |> ExactMatch
     | "xv" -> IcosaView (TectonicStressColours None)  |> NewRenderMode |> ExactMatch
-    | "xb" -> IcosaView (TectonicHeightBiasColours None)  |> NewRenderMode |> ExactMatch
+    | "xb1" -> IcosaView (TectonicHeightBiasColours (None, HB_Flat))  |> NewRenderMode |> ExactMatch
     | "c" -> { colours = TectonicColours None; wireframeConnections = true } 
                              |> ClusterView |> NewRenderMode |> ExactMatch
     | "d" -> { colours = TectonicColours None; wireframeConnections = false }
