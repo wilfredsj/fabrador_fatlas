@@ -33,6 +33,7 @@
   //       -10: assign momentum to cluster
   //       -11: stress function based on momentum
   //       -12: render mode for stress
+  //       -36: stress should be based on dot of dV with dX
 
 
   // TODO:
@@ -40,7 +41,6 @@
   //       -13: render mode for base height
   //       -29: Solve gimbal lock in at least euclidean case
   //       -35: Some kind of legend for colour scale
-  //       -36: stress should be based on dot of dV with dX
 
 
 

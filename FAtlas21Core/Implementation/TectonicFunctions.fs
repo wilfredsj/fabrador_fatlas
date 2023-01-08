@@ -713,7 +713,10 @@ module TectonicFunctions =
         else
           let (hubi, drefi, dref2i, ui,vi ,hi) = clusterDirectionsArray.[i-1]
           let (hubj, drefj, dref2j, uj,vj ,hj) = clusterDirectionsArray.[j-1]
-          let stress = vi * vj * dot ui uj
+          //vi * vj * dot ui uj
+          let dv = (ui * vi) - (uj * vj)
+          let dx = (hubj - hubi)
+          let stress = dot dv dx
           let thisBearing = bearing hubi drefi dref2i hubj
           let otherBearing = bearing hubj drefj dref2j hubi
           let (form, stat) = stressType rng fg hi hj stress
