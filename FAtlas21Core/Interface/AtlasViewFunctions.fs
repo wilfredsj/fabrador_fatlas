@@ -115,7 +115,13 @@ module AtlasViewFunctions =
   let extractCompleteClusterData s =
     match s with
     | ClusterFinished cf -> cf
+    | TectonicAssigned td -> td.cca
     | _ -> failwith <| sprintf "No cluster data for %A" s
+
+  let extractTectonicData s =
+    match s with
+    | TectonicAssigned td -> td
+    | _ -> failwith <| sprintf "No tectonic data for %A" s
     
   let updateIcosaView iOpt cs state =
     let colours = 
@@ -128,8 +134,13 @@ module AtlasViewFunctions =
         tectonicColoursFiltered targetId <| cd
       | TectonicLocalCoordColours None ->  tectonicRThColours (extractTriangleSet state.model) None <| extractCompleteClusterData state.model
       | TectonicLocalCoordColours (Some targetIdx) ->  
-          let targetId = targetIdx + 1
-          tectonicRThColours (extractTriangleSet state.model) (Some targetId) <| extractCompleteClusterData state.model
+        let targetId = targetIdx + 1
+        tectonicRThColours (extractTriangleSet state.model) (Some targetId) <| extractCompleteClusterData state.model
+      | TectonicStressColours iOpt -> 
+        tectonicStressColours (extractTriangleSet state.model) (iOpt |> Option.map(fun i -> i+1)) <| extractTectonicData state.model
+      | TectonicHeightBiasColours iOpt ->
+        failwith "nyi"
+
     solidViewIcosaSection iOpt colours state (extractTriangleSet state.model)
         
   let updateClusterView cs state =

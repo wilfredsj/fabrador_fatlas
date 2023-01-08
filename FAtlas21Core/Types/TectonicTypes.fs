@@ -165,7 +165,7 @@ module TectonicTypes =
     heightBias : float
     unitVelocity : Cartesian
     velocityMagnitude: float
-    stressNeighboursSorted : GeoClusterBoundary list
+    stressNeighboursSorted : (GeoClusterBoundary*GeoClusterBoundary) array
   }
 
   type TectonicData<'Key when 'Key : comparison> = {

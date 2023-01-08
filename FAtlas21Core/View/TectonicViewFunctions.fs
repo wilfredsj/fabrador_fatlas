@@ -158,5 +158,17 @@ module TectonicViewFunctions =
     let r' = min r 1.0
     let th' = if th < 0.0 then th + (System.Math.PI * 2.0) else th
     uniformHueSat (float32 r') 1.0f (System.Math.PI * 2.0) mkColour th'
+
+  
+  let localStressView mkColour (tecState : TectonicData<'A>) c url = 
+    let plate = tecState.plates.[c-1]
+    let cart = urlToCartesian tecState.cca.meshData 1.0 url
+    let (stress,r) = getLocalStressAndR plate cart
+    let scale = 0.0125
+    let offColour = (System.Math.PI) * 2.0 * 220.0 / 360.0
+    if stress < 0.0 then
+      singleHueVarySat offColour 1.0 scale mkColour (-stress * r)
+    else
+      singleHueVarySat 0.0 1.0 scale mkColour (stress * r)
     
 

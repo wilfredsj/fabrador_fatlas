@@ -407,12 +407,12 @@ module TectonicFunctionsNonProd =
   let makeBoundaryData1 points centroid referenceCart : ClusterBoundary2 = 
     let args = 
       points
-      |> pairwiseWithCyclic_Reversed
+      |> pairwiseWithCyclic_Reversed None
       |> List.map(fun (x,y) -> (x.argument, y.argument))
 
     let normBoundary = 
       points
-      |> pairwiseWithCyclic_Reversed
+      |> pairwiseWithCyclic_Reversed None
       |> List.fold( 
         fun s (big,small) ->
           let big' =

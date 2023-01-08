@@ -77,4 +77,13 @@ module ViewHelperFunctions =
     |> function 
       | None -> grayscale mkColour i ij k
       | Some(c) -> uniformHue2 0.6f 0.6f nc mkColour c ij k
+
+  let tectonicStressColours ts jOpt (tecState : TectonicData<'A>) mkColour i ij k =
+    let jUsed = jOpt |> Option.defaultValue -1
+    let url = { t = i; i = fst ij; j = snd ij} |> normalizeElement ts
+    let nc = tecState.cca.allClusters |> Array.length |> fun x -> float (x - 1) 
+    Map.tryFind url tecState.cca.clusterAssignments
+    |> function 
+      | Some(c) when c=jUsed || jUsed < 0 -> localStressView mkColour tecState c url
+      | _ -> grayscale mkColour i ij k
     

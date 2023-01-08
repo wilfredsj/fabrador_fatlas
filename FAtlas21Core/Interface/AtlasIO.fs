@@ -54,6 +54,8 @@ module AtlasIO =
     | ParseRegex "^xa(\d+)c$" [faceId] -> 
       IcosaViewFiltered (TectonicLocalCoordColours None, System.Int32.Parse faceId)
                                                 |> NewRenderMode |> ExactMatch
+    | "xv" -> IcosaView (TectonicStressColours None)  |> NewRenderMode |> ExactMatch
+    | "xb" -> IcosaView (TectonicHeightBiasColours None)  |> NewRenderMode |> ExactMatch
     | "c" -> { colours = TectonicColours None; wireframeConnections = true } 
                              |> ClusterView |> NewRenderMode |> ExactMatch
     | "d" -> { colours = TectonicColours None; wireframeConnections = false }

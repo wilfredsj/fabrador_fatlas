@@ -29,21 +29,29 @@ module Interface =
     | IcosaView (TectonicColours _) ->
       match state.model with
       | ClusterAssignment _
-      | ClusterFinished _ -> true
+      | ClusterFinished _ 
+      | TectonicAssigned _ -> true
       | _ -> false
     | IcosaViewFiltered ((TectonicColours _), _) ->
       match state.model with
       | ClusterAssignment _
-      | ClusterFinished _ -> true
+      | ClusterFinished _ 
+      | TectonicAssigned _ -> true
       | _ -> false
-    | IcosaView (TectonicLocalCoordColours _)->
-      match state.model with
-      | ClusterFinished _ -> true
-      | _ -> false
+    | IcosaView (TectonicLocalCoordColours _)
     | IcosaViewFiltered ((TectonicLocalCoordColours _), _) ->
       match state.model with
       | ClusterFinished _ -> true
+      | TectonicAssigned _ -> true
       | _ -> false
+    | IcosaView (TectonicStressColours _)
+    | IcosaView (TectonicHeightBiasColours _)
+    | IcosaViewFiltered ((TectonicStressColours _), _)
+    | IcosaViewFiltered ((TectonicHeightBiasColours _), _) ->
+      match state.model with
+      | TectonicAssigned _ -> true
+      | _ -> false
+
     | ClusterView _ ->
       match state.model with
       | ClusterFinished _ -> true

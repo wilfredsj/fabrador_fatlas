@@ -118,7 +118,7 @@ module TectonicFunctions =
       connectedFaces = Set.empty
     }
 
-  let pairwiseWithCyclic_Reversed l =
+  let pairwiseWithCyclic_Reversed fOpt l =
     let rec pairwiseWithCyclic' first previous acc l' =
       match l' with
       | [] -> (previous, first) :: acc
@@ -128,9 +128,13 @@ module TectonicFunctions =
     match l with
     | [] -> []
     | h :: tail ->
-      pairwiseWithCyclic' h h [] tail
+      let first' = 
+        fOpt 
+        |> Option.map(fun f -> f h)
+        |> Option.defaultValue h
+      pairwiseWithCyclic' first' h [] tail
       
-  let pairwiseWithCyclic a = pairwiseWithCyclic_Reversed a |> List.rev
+  let pairwiseWithCyclic fOpt a = pairwiseWithCyclic_Reversed fOpt a |> List.rev
 
   let yInterp nbs newX =
     nbs.y_lower + nbs.dy_dx * (newX - nbs.x_lower)
@@ -196,12 +200,12 @@ module TectonicFunctions =
   let makeBoundaryData points centroid referenceCart : ClusterBoundary = 
     let args = 
       points
-      |> pairwiseWithCyclic_Reversed
+      |> pairwiseWithCyclic_Reversed None
       |> List.map(fun (x,y) -> (x.argument, y.argument))
 
     let normBoundary = 
       points
-      |> pairwiseWithCyclic_Reversed
+      |> pairwiseWithCyclic_Reversed None
       |> List.map( 
         fun (big,small) ->
           let big' =
@@ -541,15 +545,14 @@ module TectonicFunctions =
         else
           binSearchBdry boundary current uppern1 ((current + uppern1) / 2) a
       else
-        if lower + 1 = current then
+        if lower = current then
           boundary.[current]
         else
           binSearchBdry boundary lower current ((lower + current) / 2) a
     (arg', binSearchBdry boundaryArr 0 size (size/2) arg')
 
-  let getLocalCoordinates cluster localPoint =
-    let b = makeBearinger cluster.hub cluster.ref
-    let th = b localPoint
+  let getLocalCoordinates' dref dref2 cluster localPoint =
+    let th = bearing cluster.hub dref dref2 localPoint
     let r = modulus (localPoint - cluster.hub)
     let (th_used, (some_th, (some_r, boundary))) = lookupBoundary cluster.normalizedBoundary th
     let r_actual = interpolated boundary th_used
@@ -557,6 +560,10 @@ module TectonicFunctions =
       failwith "Bad"
     else 
       (r / r_actual, th)
+
+  let getLocalCoordinates cluster localPoint =
+    let (dref, dref2) = prepareBearing cluster.hub cluster.ref
+    getLocalCoordinates' dref dref2 cluster localPoint
 
   let clampLinterp (xArr : float array) (yArr : float array) x =
     if xArr.Length = 2 then
@@ -701,20 +708,23 @@ module TectonicFunctions =
     let (gcbMap, stats)  = 
       connectedFaces
       |> List.fold(fun (acc, stats) (i,j) ->
-        let (hubi, drefi, dref2i, ui,vi ,hi) = clusterDirectionsArray.[i-1]
-        let (hubj, drefj, dref2j, uj,vj ,hj) = clusterDirectionsArray.[j-1]
-        let stress = vi * vj * dot ui uj
-        let thisBearing = bearing hubi drefi dref2i hubj
-        let otherBearing = bearing hubj drefj dref2j hubi
-        let (form, stat) = stressType rng fg hi hj stress
-        let res = { thisBearing = thisBearing; oppositeBearing = otherBearing; stress = stress; form = form; thisId = i; oppositeId = j}
+        if j>=i then
+          (acc,stats)
+        else
+          let (hubi, drefi, dref2i, ui,vi ,hi) = clusterDirectionsArray.[i-1]
+          let (hubj, drefj, dref2j, uj,vj ,hj) = clusterDirectionsArray.[j-1]
+          let stress = vi * vj * dot ui uj
+          let thisBearing = bearing hubi drefi dref2i hubj
+          let otherBearing = bearing hubj drefj dref2j hubi
+          let (form, stat) = stressType rng fg hi hj stress
+          let res = { thisBearing = thisBearing; oppositeBearing = otherBearing; stress = stress; form = form; thisId = i; oppositeId = j}
 
-        let acc' = 
-          acc
-          |> mapAddOr i res 
-          |> mapAddOr j (reverse res)
-        let stats' = stat :: stats
-        (acc', stats')) (Map.empty, [])
+          let acc' = 
+            acc
+            |> mapAddOr i res 
+            |> mapAddOr j (reverse res)
+          let stats' = stat :: stats
+          (acc', stats')) (Map.empty, [])
 
     let writeStats = true
     if writeStats then
@@ -728,6 +738,8 @@ module TectonicFunctions =
           gcbMap 
           |> Map.find c.id
           |> List.sortBy(fun gcb -> gcb.thisBearing)
+          |> pairwiseWithCyclic (Some (fun gcb -> { gcb with thisBearing = gcb.thisBearing + 2.0 * System.Math.PI }))
+          |> Array.ofList
         { cluster = c; heightBias = hi; unitVelocity = ui; velocityMagnitude = vi; stressNeighboursSorted = thisBoundary})
     geoClusters
     
@@ -736,3 +748,42 @@ module TectonicFunctions =
       cca = cca;
       plates = makeGeoClusters rng (Set.toList cca.connectedFaces) cca.allClusters
     }
+  
+  let lookupGeoBoundary (boundaryArr : (GeoClusterBoundary*GeoClusterBoundary) array) argument =
+    let size = Array.length boundaryArr
+    let rec binSearchBdry (boundary : (GeoClusterBoundary*GeoClusterBoundary) array) lower uppern1 current a =
+      if a >= (snd boundary.[current]).thisBearing then
+        if current + 1 = uppern1 then
+          boundary.[current]
+        else
+          binSearchBdry boundary current uppern1 ((current + uppern1) / 2) a
+      else
+        if a >= (fst boundary.[current]).thisBearing then
+          boundary.[current]
+        elif lower = current then
+          boundary.[current]
+        else
+          binSearchBdry boundary lower current ((lower + current) / 2) a
+    let arg' =
+      if Array.isEmpty boundaryArr then
+        failwith "Empty Boundary"
+      elif argument < (fst boundaryArr.[0]).thisBearing then
+        argument + (2.0 * System.Math.PI)
+      elif argument > (snd boundaryArr.[size-1]).thisBearing then
+        failwith "Boundary missing some bounds"
+      else
+        argument
+    (arg', binSearchBdry boundaryArr 0 size (size/2) arg')
+
+  let getLocalStressAndR (tec : TectonicCluster) cart =
+    let (dref, dref2) = prepareBearing tec.cluster.orderedBorder.hub tec.cluster.orderedBorder.ref
+    let (r,th) = getLocalCoordinates' dref dref2 tec.cluster.orderedBorder cart
+    let (th', (lowerNbr, upperNbr)) = lookupGeoBoundary tec.stressNeighboursSorted th
+    if th' > upperNbr.thisBearing then
+      failwith "Bad normalization"
+    elif th' < lowerNbr.thisBearing then
+      failwith "Bad normalization"
+    else
+      let alpha = (th' - lowerNbr.thisBearing) / (upperNbr.thisBearing - lowerNbr.thisBearing)
+      let stress = alpha * upperNbr.stress + (1.0-alpha)*lowerNbr.stress
+      (stress,r)
