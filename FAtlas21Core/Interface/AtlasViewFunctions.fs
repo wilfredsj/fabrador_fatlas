@@ -102,12 +102,14 @@ module AtlasViewFunctions =
     | IcosaDivision t -> t
     | ClusterAssignment (cas, vc) -> cas.meshData
     | ClusterFinished cf -> cf.meshData
+    | TectonicAssigned tec -> tec.cca.meshData
     | _ -> failwith <| sprintf "No triangles set for %A" s
     
   let extractClusterData s =
     match s with
     | ClusterAssignment (cas,_) -> renderCAS cas
     | ClusterFinished cf -> renderCCS cf
+    | TectonicAssigned tec -> tec.cca |> renderCCS
     | _ -> failwith <| sprintf "No cluster data for %A" s
         
   let extractCompleteClusterData s =

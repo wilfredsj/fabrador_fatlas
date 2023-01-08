@@ -32,6 +32,7 @@ module AtlasIO =
     | "qee" ->                   ClusterInit None            |> ExactMatch
     | "qr" ->                    ClusterIterate 100          |> PartialMatch
     | "qrr" ->                   ClusterIterate 10000        |> ExactMatch
+    | "qt" ->                    AssignTectonics             |> ExactMatch
     | "z" ->  IcosaView GrayScale                    |> NewRenderMode |> ExactMatch
     | "xx" -> IcosaView (TectonicColours None)       |> NewRenderMode |> ExactMatch
     | ParseRegex "^x(\d+)x$" [clusterId] -> 

@@ -20,6 +20,7 @@ module Interface =
     | IcosaDivision _ ->         IcosaView GrayScale
     | ClusterAssignment _ ->     IcosaView (TectonicColours None)
     | ClusterFinished _ ->       ClusterView { colours = (TectonicColours None); wireframeConnections = true }
+    | TectonicAssigned _ ->      IcosaView GrayScale
   
   let isSupportedRenderState state =
     match state.render with
@@ -93,6 +94,10 @@ module Interface =
       { state with model = ClusterFinished ncs' }
     else
       { state with model = ClusterAssignment (ncs, vc)}
+
+  let assignTectonicState state (cca : CompleteClusterAssignment<(char*int) list>) =
+    let tec = makeTectonics rng cca
+    { state with model = TectonicAssigned tec}
 
   let blankState state =
     let data = createIcosahedron()
@@ -179,6 +184,13 @@ module Interface =
         match state.model with
         | ClusterAssignment(cs, vc) ->
           let ns = divideClusterState state cs vc n
+          updateView ns
+          |> maybeUpdateCacheState ns
+        | _ -> state
+      | AssignTectonics ->
+        match state.model with
+        | ClusterFinished cca ->
+          let ns = assignTectonicState state cca
           updateView ns
           |> maybeUpdateCacheState ns
         | _ -> state

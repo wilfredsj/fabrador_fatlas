@@ -54,12 +54,14 @@ module AtlasStateTypes =
   | UIInstruction of UIAction
   | ClusterInit of int option
   | ClusterIterate of int
+  | AssignTectonics
 
   type ModelState =
   | Init
   | IcosaDivision of TriangleSet<KeyedPoint<Coordinate>>
   | ClusterAssignment of ClusterAssigmentState<(char*int) list>*VertexConverters
   | ClusterFinished of CompleteClusterAssignment<(char*int) list>
+  | TectonicAssigned of TectonicData<(char*int) list>
 
   type A3V = float32*float32*float32
   type UIUnitCallbacks = { 

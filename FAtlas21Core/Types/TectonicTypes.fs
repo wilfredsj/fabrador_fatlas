@@ -95,17 +95,81 @@ module TectonicTypes =
   }
   
   let finishedAssigment u = Array.isEmpty u.unfinishedClusters
+
+  
+  //
+  //
+  //      _=^
+  //   _=^
+  // =^
+  //
+  //    ^__==^
+  //   =  
+  // =^
+
+  //
+  //   ^   _=^
+  //  = =_^
+  // =   
   
   type StressFunction =
-  | SmoothLinear
-  | PeakAtMid
+  | SmoothLinear    
+  | PeakAtMid of bool
   | PeakAtSide of float
 
-  type GeoCluster = {
+  type FormGeneratorParams = {
+    stressThresholds : float array
+    smallDH : float    
+    bigDH : float
+    pSameDirPeakArr : float array array
+    pOppositeDirPeakArr : float array array
+    pSideArr : float array array
+    pPeakArr : float array array
+    pTroughArr : float array array
+  }
+
+  type FormStatistic = {
+    stress : float
+    dh : float
+    avgH : float
+    formChosen : StressFunction
+  }
+
+  type GeoClusterBoundary = {
+    thisBearing : float
+    oppositeBearing : float
+    stress : float
+    form : StressFunction
+    thisId : int
+    oppositeId : int
+  }
+
+  let reverseSf = 
+    function
+    | SmoothLinear -> SmoothLinear
+    | PeakAtMid b -> PeakAtMid b
+    | PeakAtSide x -> PeakAtSide -x
+
+
+  let reverse gcb = {
+    oppositeBearing = gcb.thisBearing;
+    thisBearing = gcb.oppositeBearing
+    stress = gcb.stress
+    form = reverseSf gcb.form
+    thisId = gcb.oppositeId
+    oppositeId = gcb.thisId
+  }
+
+  type TectonicCluster = {
     cluster : CompleteClusterDatum
     heightBias : float
-    velocityMagnitude : float
-    velocityBearing : float
-    stressNeighboursSorted : list<float*(float*StressFunction)>
+    unitVelocity : Cartesian
+    velocityMagnitude: float
+    stressNeighboursSorted : GeoClusterBoundary list
+  }
+
+  type TectonicData<'Key when 'Key : comparison> = {
+    cca : CompleteClusterAssignment<'Key>
+    plates : TectonicCluster array
   }
 

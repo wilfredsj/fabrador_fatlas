@@ -558,4 +558,181 @@ module TectonicFunctions =
     else 
       (r / r_actual, th)
 
-        
+  let clampLinterp (xArr : float array) (yArr : float array) x =
+    if xArr.Length = 2 then
+      if x < xArr.[0] then
+        yArr.[0]
+      elif x > xArr.[1] then
+        yArr.[1]
+      else
+        yArr.[0] + (x-xArr.[0])/(xArr.[1] - xArr.[0]) * (yArr.[1] - yArr.[0])
+    elif xArr.Length = 3 then
+      if x < xArr.[0] then
+        yArr.[0]
+      elif x > xArr.[2] then
+        yArr.[2]
+      elif x > xArr.[1] then
+        yArr.[1] + (x-xArr.[1])/(xArr.[2] - xArr.[1]) * (yArr.[2] - yArr.[1])
+      else
+        yArr.[0] + (x-xArr.[0])/(xArr.[1] - xArr.[0]) * (yArr.[1] - yArr.[0])
+    else failwith "nyi"
+
+  let quadInterp (x0Arr : float array) (x1Arr : float array) (yArr : float array array) x0 x1 = 
+    let lowx1 = clampLinterp x0Arr yArr.[0] x0
+    let highx1 = clampLinterp x0Arr yArr.[1] x0
+    clampLinterp x1Arr [|lowx1; highx1|] x1
+
+  let formGenerator =   
+    let negStress = -1.0/36.0
+    let midStress = 1.0/36.0
+    let highStress = 3.0/36.0
+    let smallDh = 0.2
+    let bigDh = 0.6
+
+    let pSameDirPeakArr = [| [| 0.2; 0.3; 0.4 |]; [|0.1; 0.2; 0.3 |] |]  // [| [|lowH |] [|highH|] |]
+    let pOppositeDirPeakArr = [| [| 0.0; 0.25; 0.0 |]; [| 0.0; 0.05; 0.0 |] |]
+    let pSideArr = [| [| 0.0; 0.0; 0.2 |] ; [| 0.0; 0.1; 0.45|] |]
+    let pPeakArr = [| [| 0.0; 0.1; 0.1 |]; [|0.0; 0.1; 0.1 |] |]  // [| [|lowH |] [|highH|] |]
+    let pTroughArr = [| [| 0.4; 0.05; 0.0 |]; [|0.2; 0.005; 0.0 |] |]  // [| [|lowH |] [|highH|] |]
+    {
+      stressThresholds =  [| negStress; midStress; highStress|];
+      smallDH = smallDh;
+      bigDH = bigDh;
+      pSameDirPeakArr = pSameDirPeakArr;
+      pOppositeDirPeakArr = pOppositeDirPeakArr;
+      pSideArr = pSideArr;
+      pPeakArr = pPeakArr;
+      pTroughArr = pTroughArr;
+    }
+
+  let stressType (rng : System.Random) fg thisH otherH stress =
+    let dH = abs ( otherH - thisH )
+    let avgH = (thisH + otherH) / 2.0
+    //x0 = stress
+    //x1 = dh
+    let stressArr = fg.stressThresholds
+    let dhArr = [|fg.smallDH; fg.bigDH|]
+    let pSameDirPeak = quadInterp stressArr dhArr fg.pSameDirPeakArr stress dH
+    let pOppositeDirPeak = quadInterp stressArr dhArr fg.pOppositeDirPeakArr stress dH
+    let pSide = quadInterp stressArr dhArr fg.pSideArr stress dH
+    let pPeak = quadInterp stressArr dhArr fg.pPeakArr stress dH
+    let pTrough = quadInterp stressArr dhArr fg.pTroughArr stress dH
+    
+    let cumul1 = pOppositeDirPeak + pSameDirPeak
+    let cumul2 = cumul1 + pSide
+    let cumul3 = cumul2 + pPeak
+    let cumul4 = cumul3 + pTrough
+
+    let u = rng.NextDouble()
+
+    let form = 
+      if u < pSameDirPeak then
+        if avgH > 0.0 then
+          PeakAtMid true
+        else
+          PeakAtMid false
+      elif u < cumul1 then
+        if avgH > 0.0 then
+          PeakAtMid false
+        else
+          PeakAtMid true
+      elif u < cumul2 then
+        PeakAtSide 0.25
+      elif u < cumul3 then
+        PeakAtMid true
+      elif u < cumul4 then
+        PeakAtMid false
+      else
+        SmoothLinear
+    let stats = { stress = stress; formChosen = form; dh = dH; avgH = avgH}
+    (form, stats)
+
+  let mapAddOr key value map =
+    match Map.tryFind key map with
+    | None -> Map.add key [value] map
+    | Some(vals) -> Map.add key (value :: vals) map
+
+  let printForThreshold name arr threshold n =
+    let m = arr |> Array.filter(fun x -> x < threshold) |> Array.length
+    let pc = (float m) / (float n)
+    sprintf "%s @ %.3f: %i of %i (%.4f)" name threshold m n (100.0 * pc)
+
+     
+  let printGeoStats printer (fg : FormGeneratorParams) (stats : FormStatistic list) =
+    let statArr = stats |> Array.ofList
+    let n = Array.length statArr 
+    let nf = float n
+    sprintf "GeoStats, N = %i" n |> printer
+    sprintf "Generator, %A" fg |> printer
+    let stressArr = statArr |> Array.map(fun gs -> gs.stress)
+    let meanStress = stressArr |> Array.sum |> fun x -> x / nf
+    let maxStress = stressArr |> Array.max
+    let minStress = stressArr |> Array.min
+    sprintf "Stress, mean = %.4f, max = %.4f, min = %.4f" meanStress maxStress minStress |> printer
+    fg.stressThresholds |> Array.iter(fun thresh -> printForThreshold "Stress" stressArr thresh n |> printer)
+
+    
+    let dhArr = statArr |> Array.map(fun gs -> gs.dh)
+    let meanDh = dhArr |> Array.sum |> fun x -> x / nf
+    let maxDh = dhArr |> Array.max
+    let minDh = dhArr |> Array.min
+    sprintf "dH (ab), mean = %.4f, max = %.4f, min = %.4f" meanDh maxDh minDh |> printer
+    [| fg.smallDH; fg.bigDH |] |> Array.iter(fun thresh -> printForThreshold "dH" dhArr thresh n |> printer)
+
+    statArr 
+    |> Array.countBy(fun gs -> gs.formChosen)
+    |> Array.iter(fun (form, count) ->
+      sprintf "%A : %i of %i (%.4f)" form count n (float count * 100.0 / nf) |> printer)
+
+  let makeGeoClusters (rng : System.Random) (connectedFaces : (int*int) list) (allClusters : CompleteClusterDatum array) = 
+
+    let clusterDirectionsArray = 
+      allClusters 
+      |> Array.map(fun c -> 
+        let th = System.Math.PI * 2.0 * rng.NextDouble()
+        let (dref, dref2) = prepareBearing c.orderedBorder.hub c.orderedBorder.ref
+        let vector = reconstitute_dx dref dref2 th
+        let v = rng.NextDouble()
+        let h = (2.0 * rng.NextDouble()) - 1.0
+        (c.orderedBorder.hub, dref, dref2, vector, v, h))
+
+    let fg = formGenerator
+
+    let (gcbMap, stats)  = 
+      connectedFaces
+      |> List.fold(fun (acc, stats) (i,j) ->
+        let (hubi, drefi, dref2i, ui,vi ,hi) = clusterDirectionsArray.[i-1]
+        let (hubj, drefj, dref2j, uj,vj ,hj) = clusterDirectionsArray.[j-1]
+        let stress = vi * vj * dot ui uj
+        let thisBearing = bearing hubi drefi dref2i hubj
+        let otherBearing = bearing hubj drefj dref2j hubi
+        let (form, stat) = stressType rng fg hi hj stress
+        let res = { thisBearing = thisBearing; oppositeBearing = otherBearing; stress = stress; form = form; thisId = i; oppositeId = j}
+
+        let acc' = 
+          acc
+          |> mapAddOr i res 
+          |> mapAddOr j (reverse res)
+        let stats' = stat :: stats
+        (acc', stats')) (Map.empty, [])
+
+    let writeStats = true
+    if writeStats then
+      printGeoStats (printfn "%s") fg stats
+      
+    let geoClusters =
+      allClusters |> 
+      Array.mapi(fun i c -> 
+        let (hubi, drefi, dref2i, ui,vi ,hi) = clusterDirectionsArray.[i]
+        let thisBoundary = 
+          gcbMap 
+          |> Map.find c.id
+          |> List.sortBy(fun gcb -> gcb.thisBearing)
+        { cluster = c; heightBias = hi; unitVelocity = ui; velocityMagnitude = vi; stressNeighboursSorted = thisBoundary})
+    geoClusters
+    
+  let makeTectonics rng (cca : CompleteClusterAssignment<'A>) =
+    {
+      cca = cca;
+      plates = makeGeoClusters rng (Set.toList cca.connectedFaces) cca.allClusters
+    }
