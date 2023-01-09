@@ -172,5 +172,14 @@ module TectonicViewFunctions =
     let scale = 0.0125
     let offColour = (System.Math.PI) * 2.0 * 220.0 / 360.0
     dualHueFromSign mkColour 0.0 offColour scale (stress * r)
+
+  let getHeightBias f tecState c url =
+    let plate = tecState.plates.[c-1]
+    let cart = urlToCartesian tecState.cca.meshData 1.0 url
+    fst (f plate cart)
     
+  let getFlatHeightBias = TectonicFunctions.getFlatHeightBias
+  let getLinearHeightBias = TectonicFunctions.getLinearHeightBias
+  let getStressedHeightBias = TectonicFunctions.getStressedHeightBias
+
 

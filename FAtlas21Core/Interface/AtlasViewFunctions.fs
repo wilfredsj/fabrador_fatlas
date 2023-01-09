@@ -33,8 +33,12 @@ module AtlasViewFunctions =
   // Typical use case is in a fold
   //    in which case renderCacheOverride is None on the first TriangleSet
   //                                 and non-None on the subsequent ones
-  let drawIcosaSection r colourer (state : AtlasState<'V,'C>) (ts : TriangleSet<'A>) renderCacheOverride (i,t) =
-    let toSimpleCart ij (coord : KeyedPoint<Coordinate>) = cartFromSphereWithRadius r coord.datum
+  let drawIcosaSection rOpt colourer (state : AtlasState<'V,'C>) (ts : TriangleSet<'A>) renderCacheOverride (i,t) =
+
+    let toSimpleCart = 
+      match rOpt with 
+      | Choice1Of2 r -> fun ij (coord : KeyedPoint<Coordinate>) -> cartFromSphereWithRadius r coord.datum
+      | Choice2Of2 f -> fun ij (coord : KeyedPoint<Coordinate>) -> cartFromSphereWithRadius (f i ij coord) coord.datum
     
     // let colourer ij k = (0.6f,0.2f,0.5f) |> state.callbacks.makeColour 
     
@@ -57,9 +61,9 @@ module AtlasViewFunctions =
       | None -> tsi
     |> Array.mapFold (drawIcosaSection r colourer state ts) None
 
-  let solidViewIcosaSection iOpt colourer state ts =
+  let solidViewIcosaSection rOpt iOpt colourer state ts =
     let (elts, newCache) = 
-      drawAllIcosaSections iOpt 1.0 colourer state ts
+      drawAllIcosaSections iOpt rOpt colourer state ts
     state.callbacks.onUpdateCallback [concat3 "Triangles" elts]
     newCache 
 
@@ -76,7 +80,7 @@ module AtlasViewFunctions =
   let solidViewIcosaSectionNoWires wireColourer state (ccs : CompleteClusterAssignment<'A>) =
     let ts = ccs.meshData
     let (solid, newCache) =
-      drawAllIcosaSections None 0.6 wireColourer state ts
+      drawAllIcosaSections None (Choice1Of2 0.6) wireColourer state ts
         
     
     state.callbacks.onUpdateCallback [concat3 "Triangles" solid]
@@ -88,7 +92,7 @@ module AtlasViewFunctions =
     let (w1,w2,w3) = viewClusterToBorderNodes state.callbacks.makeVertex state.callbacks.makeColour None ccs
     let lineSection = (w1,w2,w3,"Lines")
     let (solid, newCache) =
-      drawAllIcosaSections None 0.6 (tectonicColours2 ccs) state ts
+      drawAllIcosaSections None (Choice1Of2 0.6) (tectonicColours2 ccs) state ts
     
     let allElts =
       [concat3 "Triangles" solid; lineSection]
@@ -138,12 +142,25 @@ module AtlasViewFunctions =
         tectonicRThColours (extractTriangleSet state.model) (Some targetId) <| extractCompleteClusterData state.model
       | TectonicStressColours iOpt -> 
         tectonicStressColours (extractTriangleSet state.model) (iOpt |> Option.map(fun i -> i+1)) <| extractTectonicData state.model
-      | TectonicHeightBiasColours (iOpt, hbType) ->
+      | TectonicHeightBiasColours (iOpt, hbType, _) ->
         match hbType with
         | HB_Flat -> tectonicFlatHeight (extractTriangleSet state.model) (iOpt |> Option.map(fun i -> i+1)) <| extractTectonicData state.model
+        | HB_None -> tectonicColours <| extractClusterData state.model
         | _ -> failwith "nyi"
 
-    solidViewIcosaSection iOpt colours state (extractTriangleSet state.model)
+    let rOpt = 
+      match cs with
+      | TectonicHeightBiasColours (iOpt, _, x) -> 
+          let fn = 
+            match x with
+            | HB_Flat -> getFlatHeightBias
+            | HB_Linear -> getLinearHeightBias
+            | HB_Stressed -> getStressedHeightBias
+            | HB_None -> fun x y -> (0.0, 0.0/1.0)
+          Choice2Of2 <| (tectonicRadiusBiasFlatHeight 1.0 fn (extractTriangleSet state.model) (iOpt |> Option.map(fun i -> i+1)) <| extractTectonicData state.model)
+      | _ -> Choice1Of2  1.0
+
+    solidViewIcosaSection rOpt iOpt colours state (extractTriangleSet state.model)
         
   let updateClusterView cs state =
     let colours = 
@@ -197,7 +214,7 @@ module AtlasViewFunctions =
 
   let updateBorderView bva state =
     let (elts, newCache) = 
-      drawAllIcosaSections None 0.8 grayscale state (extractTriangleSet state.model)
+      drawAllIcosaSections None (Choice1Of2 0.8) grayscale state (extractTriangleSet state.model)
     let borderSections =
       match bva with
       | (JustBorder, iOpt) ->

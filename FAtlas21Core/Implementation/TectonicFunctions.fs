@@ -720,7 +720,14 @@ module TectonicFunctions =
           let thisBearing = bearing hubi drefi dref2i hubj
           let otherBearing = bearing hubj drefj dref2j hubi
           let (form, stat) = stressType rng fg hi hj stress
-          let res = { thisBearing = thisBearing; oppositeBearing = otherBearing; stress = stress; form = form; thisId = i; oppositeId = j}
+          let res = { 
+            thisBearing = thisBearing; 
+            oppositeBearing = otherBearing; 
+            stress = stress; 
+            form = form; 
+            thisId = i; oppositeId = j;
+            thisMidBias = hi; oppositeMidBias = hj
+          }
 
           let acc' = 
             acc
@@ -778,7 +785,49 @@ module TectonicFunctions =
         argument
     (arg', binSearchBdry boundaryArr 0 size (size/2) arg')
 
-  let getLocalStressAndR (tec : TectonicCluster) cart =
+
+  let interpolateLinear gcb r =
+    0.5 * (gcb.oppositeMidBias - gcb.thisMidBias) * r + gcb.thisMidBias
+
+  let interpolateStressed gcb r =
+    let stressScale = 5.0
+    let unstressed = interpolateLinear gcb r
+    let stressUsed = min (abs gcb.stress) 1.0
+    let stressed = 
+      match gcb.form with
+      | SmoothLinear -> 0.0
+      | PeakAtMid dir -> 
+        // dir=true => +ve shift (on both sides)
+        let adj = 
+          if r < 0.75 then 0.0
+          else
+            stressUsed * 4.0 * (r - 0.75)
+        if dir then
+          adj
+        else
+          -adj
+      | PeakAtSide peak ->
+        // Peak > 0 => +ve peak pm this side, negative on other side
+        let ap = abs peak
+        let lower = 1.0 - 2.0 * ap 
+        if r < lower then
+          0.0
+        else
+          // let adj = stressUsed * System.Math.Sin ((System.Math.PI / ap)*(r - lower))
+          let adj =
+            if r > 1.0 - ap then
+              stressUsed * (1.0 - r)/ ap
+            else
+              stressUsed * (r - (1.0 - (2.0 * ap))) / ap
+
+          if peak > 0.0 then
+            adj
+          else
+            -adj
+    stressScale * stressed + unstressed
+    
+  let interpolateFromBoundary(tec : TectonicCluster) f cart =
+    
     let (dref, dref2) = prepareBearing tec.cluster.orderedBorder.hub tec.cluster.orderedBorder.ref
     let (r,th) = getLocalCoordinates' dref dref2 tec.cluster.orderedBorder cart
     let (th', (lowerNbr, upperNbr)) = lookupGeoBoundary tec.stressNeighboursSorted th
@@ -788,5 +837,18 @@ module TectonicFunctions =
       failwith "Bad normalization"
     else
       let alpha = (th' - lowerNbr.thisBearing) / (upperNbr.thisBearing - lowerNbr.thisBearing)
-      let stress = alpha * upperNbr.stress + (1.0-alpha)*lowerNbr.stress
-      (stress,r)
+      let interpolated = alpha * (f upperNbr r) + (1.0-alpha) * (f lowerNbr r)
+      (interpolated,r)
+    
+  let getLocalStressAndR (tec : TectonicCluster) cart =
+    interpolateFromBoundary tec (fun gcb r -> gcb.stress) cart
+
+  let getFlatHeightBias (tec : TectonicCluster) cart =
+    (tec.heightBias, 0.0/1.0)
+
+  let getLinearHeightBias (tec : TectonicCluster) cart =
+    interpolateFromBoundary tec interpolateLinear cart
+  
+  let getStressedHeightBias (tec : TectonicCluster) cart =
+    interpolateFromBoundary tec interpolateStressed cart
+        

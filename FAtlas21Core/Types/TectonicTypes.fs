@@ -142,6 +142,8 @@ module TectonicTypes =
     form : StressFunction
     thisId : int
     oppositeId : int
+    thisMidBias : float
+    oppositeMidBias : float
   }
 
   let reverseSf = 
@@ -158,6 +160,8 @@ module TectonicTypes =
     form = reverseSf gcb.form
     thisId = gcb.oppositeId
     oppositeId = gcb.thisId
+    thisMidBias = gcb.oppositeMidBias
+    oppositeMidBias = gcb.thisMidBias
   }
 
   type TectonicCluster = {

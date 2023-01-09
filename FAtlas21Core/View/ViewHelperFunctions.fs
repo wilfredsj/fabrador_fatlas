@@ -87,7 +87,6 @@ module ViewHelperFunctions =
       | Some(c) when c=jUsed || jUsed < 0 -> localStressView mkColour tecState c url
       | _ -> grayscale mkColour i ij k
 
-      
   let tectonicFlatHeight ts jOpt (tecState : TectonicData<'A>) mkColour i ij k =
     let jUsed = jOpt |> Option.defaultValue -1
     let url = { t = i; i = fst ij; j = snd ij} |> normalizeElement ts
@@ -99,4 +98,16 @@ module ViewHelperFunctions =
         let offColour = (System.Math.PI) * 2.0 * 220.0 / 360.0
         dualHueFromSign mkColour 0.0 offColour scale tecState.plates.[c-1].heightBias
       | _ -> grayscale mkColour i ij k
-    
+
+  let tectonicRadiusBiasFlatHeight r f ts jOpt (tecState : TectonicData<'A>) i ij k =
+    let jUsed = jOpt |> Option.defaultValue -1
+    let url = { t = i; i = fst ij; j = snd ij} |> normalizeElement ts
+    Map.tryFind url tecState.cca.clusterAssignments
+    |> function 
+       | Some(c) when c=jUsed || jUsed < 0 -> 
+          let scale = 0.1
+          r + max 0.0 (scale * getHeightBias f tecState c url)
+          
+        | _ -> 
+          r
+        

@@ -7,6 +7,7 @@ open TectonicTypes
 module AtlasStateTypes =
 
   type HeightBiasType =
+  | HB_None
   | HB_Flat
   | HB_Linear
   | HB_Stressed
@@ -16,7 +17,7 @@ module AtlasStateTypes =
   | TectonicColours of int Option
   | TectonicLocalCoordColours of int Option
   | TectonicStressColours of int Option
-  | TectonicHeightBiasColours of (int Option*HeightBiasType)
+  | TectonicHeightBiasColours of (int Option*HeightBiasType*HeightBiasType)
 
   type ClusterViewArgs = { colours : ColourScheme; wireframeConnections : bool }
 
