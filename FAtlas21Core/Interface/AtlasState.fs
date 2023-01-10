@@ -47,7 +47,9 @@ module Interface =
     | IcosaView (TectonicStressColours _)
     | IcosaView (TectonicHeightBiasColours _)
     | IcosaViewFiltered ((TectonicStressColours _), _)
-    | IcosaViewFiltered ((TectonicHeightBiasColours _), _) ->
+    | IcosaViewFiltered ((TectonicHeightBiasColours _), _)
+    | IcosaView (TectonicHeightBias _)
+    | IcosaViewFiltered ((TectonicHeightBias _), _) ->
       match state.model with
       | TectonicAssigned _ -> true
       | _ -> false

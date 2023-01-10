@@ -147,6 +147,9 @@ module AtlasViewFunctions =
         | HB_Flat -> tectonicFlatHeight (extractTriangleSet state.model) (iOpt |> Option.map(fun i -> i+1)) <| extractTectonicData state.model
         | HB_None -> tectonicColours <| extractClusterData state.model
         | _ -> failwith "nyi"
+      | TectonicHeightBias (iOpt) ->
+        tectonicHeightColours 1.0 (extractTriangleSet state.model) (iOpt |> Option.map(fun i -> i+1)) <| extractTectonicData state.model
+        
 
     let rOpt = 
       match cs with
@@ -158,6 +161,8 @@ module AtlasViewFunctions =
             | HB_Stressed -> getStressedHeightBias
             | HB_None -> fun x y -> (0.0, 0.0/1.0)
           Choice2Of2 <| (tectonicRadiusBiasFlatHeight 1.0 fn (extractTriangleSet state.model) (iOpt |> Option.map(fun i -> i+1)) <| extractTectonicData state.model)
+      | TectonicHeightBias _ ->
+        Choice2Of2 <| (tectonicRadiusBiasFlatHeight 1.0 getStressedHeightBias (extractTriangleSet state.model) (iOpt |> Option.map(fun i -> i+1)) <| extractTectonicData state.model)        
       | _ -> Choice1Of2  1.0
 
     solidViewIcosaSection rOpt iOpt colours state (extractTriangleSet state.model)

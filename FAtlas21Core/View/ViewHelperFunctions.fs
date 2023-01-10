@@ -86,7 +86,8 @@ module ViewHelperFunctions =
     |> function 
       | Some(c) when c=jUsed || jUsed < 0 -> localStressView mkColour tecState c url
       | _ -> grayscale mkColour i ij k
-
+    
+  
   let tectonicFlatHeight ts jOpt (tecState : TectonicData<'A>) mkColour i ij k =
     let jUsed = jOpt |> Option.defaultValue -1
     let url = { t = i; i = fst ij; j = snd ij} |> normalizeElement ts
@@ -106,8 +107,24 @@ module ViewHelperFunctions =
     |> function 
        | Some(c) when c=jUsed || jUsed < 0 -> 
           let scale = 0.1
-          r + max 0.0 (scale * getHeightBias f tecState c url)
+          max 0.0 <| r + (scale * getHeightBias f tecState c url)
           
         | _ -> 
           r
+        
+  let tectonicHeightColours r ts jOpt (tecState : TectonicData<'A>) mkColour i ij k =
+    let jUsed = jOpt |> Option.defaultValue -1
+    let url = { t = i; i = fst ij; j = snd ij} |> normalizeElement ts
+    let r' =
+      Map.tryFind url tecState.cca.clusterAssignments
+      |> function 
+         | Some(c) when c=jUsed || jUsed < 0 -> 
+            max 0.0 <| r + 0.3 * getHeightBias getStressedHeightBias tecState c url
+          | _ -> 
+            r
+
+    // f(1.0) = 0.0
+    // f(1/1.5) = -1
+    // f(1.5) = 1
+    continuousPositiveHue 1.0 1.0 1.5 mkColour r'
         

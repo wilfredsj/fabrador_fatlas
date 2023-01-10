@@ -39,6 +39,7 @@
   //       -37: render mode for flat interpolated (zero-stress) height
   //       -38: implement API to get stressed height for from the isogrid
   //       -39: render mode for stressed height
+  //       -42: Render mode using colour for contours
 
 
   // TODO:
@@ -46,6 +47,7 @@
   //       -29: Solve gimbal lock in at least euclidean case
   //       -35: Some kind of legend for colour scale
   //       -40: Remove mystery Geo_ implementation file
+  //       -43: Think about how to sample from height bias -> height.
 
 
 

@@ -60,6 +60,7 @@ module AtlasIO =
     | "xb3" -> IcosaView (TectonicHeightBiasColours (None, HB_Flat, HB_Flat))  |> NewRenderMode |> ExactMatch
     | "xb01" -> IcosaView (TectonicHeightBiasColours (None, HB_None, HB_Linear))  |> NewRenderMode |> ExactMatch
     | "xb02" -> IcosaView (TectonicHeightBiasColours (None, HB_None, HB_Stressed))  |> NewRenderMode |> ExactMatch
+    | "xb4" -> IcosaView (TectonicHeightBias None)  |> NewRenderMode |> ExactMatch
     | "c" -> { colours = TectonicColours None; wireframeConnections = true } 
                              |> ClusterView |> NewRenderMode |> ExactMatch
     | "d" -> { colours = TectonicColours None; wireframeConnections = false }

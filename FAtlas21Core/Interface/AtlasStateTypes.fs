@@ -18,6 +18,7 @@ module AtlasStateTypes =
   | TectonicLocalCoordColours of int Option
   | TectonicStressColours of int Option
   | TectonicHeightBiasColours of (int Option*HeightBiasType*HeightBiasType)
+  | TectonicHeightBias of (int Option)
 
   type ClusterViewArgs = { colours : ColourScheme; wireframeConnections : bool }
 
