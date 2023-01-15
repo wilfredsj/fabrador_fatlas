@@ -40,6 +40,7 @@
   //       -38: implement API to get stressed height for from the isogrid
   //       -39: render mode for stressed height
   //       -42: Render mode using colour for contours
+  //       -43: Think about how to sample from height bias -> height.
 
 
   // TODO:
@@ -47,8 +48,8 @@
   //       -29: Solve gimbal lock in at least euclidean case
   //       -35: Some kind of legend for colour scale
   //       -40: Remove mystery Geo_ implementation file
-  //       -43: Think about how to sample from height bias -> height.
-
+  //       -44: Implement division on GeoMesh
+  //       -45: Work out how to test / visual hardcoded parameters
 
 
 

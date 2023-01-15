@@ -14,6 +14,8 @@
     <Compile Include="Types\TectonicTypes.fs" />
     <Compile Include="Types\SphereMeshTypes.fs" />
     <Compile Include="Types\TriangleTypes.fs" />
+    <Compile Include="Types\GeoMeshTypes.fs" />
+    <Compile Include="Implementation\MathUtils.fs" />
     <Compile Include="Implementation\CoordFunctions.fs" />
     <Compile Include="Implementation\TriangleMeshFunctions.fs" />
     <Compile Include="Implementation\TriangleLookupFunctions.fs" />
@@ -21,6 +23,7 @@
     <Compile Include="Implementation\TectonicFunctions.fs" />
     <Compile Include="Implementation\SphereMeshFunctions.fs" />
     <Compile Include="Implementation\TectonicFunctionsNonProd.fs" />
+    <Compile Include="Implementation\GeoMeshFunctions.fs" />
     <Compile Include="View\ViewUtilityFunctions.fs" />
     <Compile Include="View\MercatorViewFunctions.fs" />
     <Compile Include="View\TriangleMeshViewFunctions.fs" />

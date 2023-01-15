@@ -1,9 +1,11 @@
 ﻿namespace FAtlas
 
 open TriangleMeshTypes
-
-open TectonicFunctions
 open TectonicTypes
+open TectonicFunctions
+
+open GeoMeshFunctions
+
 open AtlasIO
 open AtlasStateTypes
 open AtlasViewFunctions
@@ -21,6 +23,7 @@ module Interface =
     | ClusterAssignment _ ->     IcosaView (TectonicColours None)
     | ClusterFinished _ ->       ClusterView { colours = (TectonicColours None); wireframeConnections = true }
     | TectonicAssigned _ ->      IcosaView GrayScale
+    | GeoDivision _ ->           GeoMeshView (GrayScale, None)
   
   let isSupportedRenderState state =
     match state.render with
@@ -30,19 +33,22 @@ module Interface =
       match state.model with
       | ClusterAssignment _
       | ClusterFinished _ 
-      | TectonicAssigned _ -> true
+      | TectonicAssigned _
+      | GeoDivision _ -> true
       | _ -> false
     | IcosaViewFiltered ((TectonicColours _), _) ->
       match state.model with
       | ClusterAssignment _
       | ClusterFinished _ 
-      | TectonicAssigned _ -> true
+      | TectonicAssigned _
+      | GeoDivision _ -> true
       | _ -> false
     | IcosaView (TectonicLocalCoordColours _)
     | IcosaViewFiltered ((TectonicLocalCoordColours _), _) ->
       match state.model with
       | ClusterFinished _ -> true
       | TectonicAssigned _ -> true
+      | GeoDivision _
       | _ -> false
     | IcosaView (TectonicStressColours _)
     | IcosaView (TectonicHeightBiasColours _)
@@ -51,16 +57,25 @@ module Interface =
     | IcosaView (TectonicHeightBias _)
     | IcosaViewFiltered ((TectonicHeightBias _), _) ->
       match state.model with
-      | TectonicAssigned _ -> true
+      | TectonicAssigned _ 
+      | GeoDivision _ -> true
       | _ -> false
 
     | ClusterView _ ->
       match state.model with
       | ClusterFinished _ -> true
+      | TectonicAssigned _ -> true
+      | GeoDivision _ -> true
       | _ -> false
     | BorderView _ ->
       match state.model with
       | ClusterFinished _ -> true
+      | TectonicAssigned _ -> true
+      | GeoDivision _ -> true
+      | _ -> false
+    | GeoMeshView _ ->
+      match state.model with
+      | GeoDivision _ -> true
       | _ -> false
     | _ -> false
 
@@ -70,12 +85,12 @@ module Interface =
     else
       defaultRenderMode state
 
-
   let updateView state = 
     let renderModeUsed = getRenderMode state
     match renderModeUsed with
     | IcosaView cs ->       updateIcosaView None cs state 
     | IcosaViewFiltered (cs,i) ->       updateIcosaView (Some i) cs state 
+    | GeoMeshView (cs,iOpt) ->       updateGeoMeshView iOpt cs state 
     | ClusterView cs ->     updateClusterView cs state
     | MercatorView ->
         solidViewMercator state
@@ -108,6 +123,11 @@ module Interface =
   let assignTectonicState state (cca : CompleteClusterAssignment<(char*int) list>) =
     let tec = makeTectonics rng cca
     { state with model = TectonicAssigned tec}
+
+  let intoGeoMesh state td = 
+    let param = defaultTechParams
+    let geoGrid = createGeoGridFromBase rng param td
+    { state with model = GeoDivision geoGrid }
 
   let blankState state =
     let data = createIcosahedron()
@@ -204,6 +224,21 @@ module Interface =
           updateView ns
           |> maybeUpdateCacheState ns
         | _ -> state
+      | InitGeoMesh force ->
+        let tdOpt = 
+          if force then
+            Some <| extractTectonicData state.model
+          else
+            match state.model with
+            | TectonicAssigned tec -> Some tec
+            | _                    -> None
+        
+        let ns = 
+          match tdOpt with
+          | Some td -> intoGeoMesh state td
+          | None -> state
+        updateView ns
+        |> maybeUpdateCacheState ns
       | _ -> state
 
 

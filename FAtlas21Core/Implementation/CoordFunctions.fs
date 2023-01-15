@@ -7,7 +7,6 @@ module CoordFunctions =
     let slong = System.Math.Sin s.latitude
     { x = slong * System.Math.Cos s.longitude; y = slong * System.Math.Sin s.longitude; z = System.Math.Cos s.latitude }
 
-
   let cart x y z = { x = x; y = y; z = z}
 
   let origin = cart 0.0 0.0 0.0

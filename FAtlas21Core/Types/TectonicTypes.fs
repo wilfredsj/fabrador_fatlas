@@ -177,3 +177,23 @@ module TectonicTypes =
     plates : TectonicCluster array
   }
 
+  type TectonicDefaultParams = {
+    heightBiasScale : float
+    isVolMultiplicative : bool
+    volScale : float
+    volOfVol: float
+    dh_dh_correl : float
+  }
+
+  type TectonicParams = 
+  | TP_Default of TectonicDefaultParams
+
+  let defaultTechParams = 
+    TP_Default {
+      heightBiasScale = 0.1
+      isVolMultiplicative = true
+      volScale = 0.1
+      volOfVol = 0.1
+      dh_dh_correl = 0.5
+    }
+

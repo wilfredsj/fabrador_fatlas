@@ -5,6 +5,7 @@ open TectonicTypes
 open TriangleMeshTypes
 open CoordFunctions
 open CoordTypes
+open MathUtils
 
 module TectonicFunctions =
   let maker keys cart =
@@ -789,7 +790,7 @@ module TectonicFunctions =
   let interpolateLinear gcb r =
     0.5 * (gcb.oppositeMidBias - gcb.thisMidBias) * r + gcb.thisMidBias
 
-  let interpolateStressed gcb r =
+  let interpolateStressedTuple gcb r =
     let stressScale = 5.0
     let unstressed = interpolateLinear gcb r
     let stressUsed = min (abs gcb.stress) 1.0
@@ -824,9 +825,17 @@ module TectonicFunctions =
             adj
           else
             -adj
-    stressScale * stressed + unstressed
+    (stressScale * stressed + unstressed, stressUsed)
+
+  let interpolateStressed a b = interpolateStressedTuple a b |> fst
+
+  let linScale alpha u l =
+    alpha * u + (1.0-alpha) * l
+
+  let tupleScale alpha (u1,u2) (l1,l2) =
+    (linScale alpha u1 l1, linScale alpha u2 l2)
     
-  let interpolateFromBoundary(tec : TectonicCluster) f cart =
+  let interpolateFromBoundary(tec : TectonicCluster) g f cart =
     
     let (dref, dref2) = prepareBearing tec.cluster.orderedBorder.hub tec.cluster.orderedBorder.ref
     let (r,th) = getLocalCoordinates' dref dref2 tec.cluster.orderedBorder cart
@@ -837,18 +846,55 @@ module TectonicFunctions =
       failwith "Bad normalization"
     else
       let alpha = (th' - lowerNbr.thisBearing) / (upperNbr.thisBearing - lowerNbr.thisBearing)
-      let interpolated = alpha * (f upperNbr r) + (1.0-alpha) * (f lowerNbr r)
+      let interpolated = g alpha (f upperNbr r) (f lowerNbr r)
       (interpolated,r)
     
   let getLocalStressAndR (tec : TectonicCluster) cart =
-    interpolateFromBoundary tec (fun gcb r -> gcb.stress) cart
+    interpolateFromBoundary tec linScale (fun gcb r -> gcb.stress) cart
 
   let getFlatHeightBias (tec : TectonicCluster) cart =
     (tec.heightBias, 0.0/1.0)
 
   let getLinearHeightBias (tec : TectonicCluster) cart =
-    interpolateFromBoundary tec interpolateLinear cart
+    interpolateFromBoundary tec linScale interpolateLinear cart
   
   let getStressedHeightBias (tec : TectonicCluster) cart =
-    interpolateFromBoundary tec interpolateStressed cart
+    interpolateFromBoundary tec linScale interpolateStressed cart
+    
+  let getStressedHeightBiasAndStress (tec : TectonicCluster) cart =
+    interpolateFromBoundary tec tupleScale interpolateStressedTuple cart
+    
+  let heightBiasToHeight param hb =
+    match param with
+    | TP_Default tdp ->
+      1.0 + tdp.heightBiasScale * hb
+
+  let stressToVol param stress = 
+    match param with
+    | TP_Default tdp ->
+      let abss = abs stress
+      let s' =
+        if abss > 1.0 then
+          sqrt abss
+        else abss
+      tdp.volScale * (1.0 + s')
+
+  let sampleHeightVol (rng : System.Random) distanceScaleFactor param baseHeight baseVol =
+    match param with
+    | TP_Default tdp ->
+      let volUsed = baseVol / distanceScaleFactor
+      let u = rng.NextDouble()
+      let v = rng.NextDouble()
+      let (u',v') = correlate tdp.dh_dh_correl u v
+      let h' =
+        if tdp.isVolMultiplicative then
+          baseHeight * (1.0 + u' * volUsed)
+        else
+          baseHeight + u' * volUsed
+      let v' =
+        baseVol * (1.0 + v' * baseVol)
+      (h', v')
+          
+
+        
         

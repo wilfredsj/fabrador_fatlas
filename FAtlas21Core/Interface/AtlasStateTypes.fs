@@ -3,6 +3,7 @@
 open TriangleMeshTypes
 open CoordTypes
 open TectonicTypes
+open GeoMeshTypes
 
 module AtlasStateTypes =
 
@@ -33,6 +34,7 @@ module AtlasStateTypes =
   | ClusterView of ClusterViewArgs
   | BorderView of BorderViewMode*(int Option)
   | MercatorView
+  | GeoMeshView of ColourScheme*(int Option)
 
   let sprintRenderMode =
     function
@@ -41,6 +43,7 @@ module AtlasStateTypes =
     | IcosaViewFiltered (cs,i)-> sprintf "IcosaViewFiltered %A %i" cs i
     | ClusterView cs -> sprintf "ClusterView %A" cs
     | BorderView (cs,i) -> sprintf "BorderView %A %A" cs i
+    | GeoMeshView (cs,iOpt)-> sprintf "GeoMeshView %A %A" cs iOpt
     | MercatorView -> "MercatorView"
 
   type RenderRotationAction =
@@ -64,6 +67,7 @@ module AtlasStateTypes =
   | ClusterInit of int option
   | ClusterIterate of int
   | AssignTectonics
+  | InitGeoMesh of bool
 
   type ModelState =
   | Init
@@ -71,6 +75,7 @@ module AtlasStateTypes =
   | ClusterAssignment of ClusterAssigmentState<(char*int) list>*VertexConverters
   | ClusterFinished of CompleteClusterAssignment<(char*int) list>
   | TectonicAssigned of TectonicData<(char*int) list>
+  | GeoDivision of GeoDivisionState<(char*int) list>
 
   type A3V = float32*float32*float32
   type UIUnitCallbacks = { 

@@ -2,10 +2,15 @@
 
 open CoordTypes
 open ColourTypes
-open TriangleMeshTypes
-open TectonicTypes
 open CoordFunctions
+
+open TriangleMeshTypes
 open TriangleMeshFunctions
+
+open TectonicTypes
+
+open GeoMeshTypes
+open GeoMeshFunctions
 
 open TriangleMeshToRender
 open TectonicViewFunctions
@@ -33,13 +38,8 @@ module AtlasViewFunctions =
   // Typical use case is in a fold
   //    in which case renderCacheOverride is None on the first TriangleSet
   //                                 and non-None on the subsequent ones
-  let drawIcosaSection rOpt colourer (state : AtlasState<'V,'C>) (ts : TriangleSet<'A>) renderCacheOverride (i,t) =
-
-    let toSimpleCart = 
-      match rOpt with 
-      | Choice1Of2 r -> fun ij (coord : KeyedPoint<Coordinate>) -> cartFromSphereWithRadius r coord.datum
-      | Choice2Of2 f -> fun ij (coord : KeyedPoint<Coordinate>) -> cartFromSphereWithRadius (f i ij coord) coord.datum
-    
+  let drawIcosaSection toSimpleCart colourer (state : AtlasState<'V,'C>) (ts : TriangleSet<'A>) renderCacheOverride (i,t) =
+      
     // let colourer ij k = (0.6f,0.2f,0.5f) |> state.callbacks.makeColour 
     
     let cacheUsed = Option.defaultValue state.renderCache renderCacheOverride
@@ -49,23 +49,44 @@ module AtlasViewFunctions =
       | Some(vm') -> { vertexConverters = vm' } |> Some
                 // vertexMapOpt will be None if getVertexConverter had a cache hit
       | None -> Some cacheUsed
-    let abc = asArrays state.callbacks.makeVertex toSimpleCart (colourer state.callbacks.makeColour i) converters ts.frame t
+    let abc = asArrays state.callbacks.makeVertex (toSimpleCart i) (colourer state.callbacks.makeColour i) converters ts.frame t
     (abc, rco')
 
-  let drawAllIcosaSections iOpt r colourer state ts =
+  let drawAllIcosaSections iOpt rOpt colourer state ts =
+    let toSimpleCart = 
+      match rOpt with 
+      | Choice1Of2 r -> fun i ij (coord : 'A) -> cartFromSphereWithRadius r coord.datum
+      | Choice2Of2 f -> fun i ij (coord : 'A) -> cartFromSphereWithRadius (f i ij coord) coord.datum
     ts.triangles 
     |> Array.indexed
     |> fun tsi ->
       match iOpt with 
       | Some i -> [| tsi.[i] |]
       | None -> tsi
-    |> Array.mapFold (drawIcosaSection r colourer state ts) None
+    |> Array.mapFold (drawIcosaSection toSimpleCart colourer state ts) None
+
+  let drawAllIcosaSectionsGeoMesh iOpt colourer state ts =
+    let toSimpleCart = fun i ij (coord : 'A) -> actualCart coord.datum
+    ts.triangles 
+    |> Array.indexed
+    |> fun tsi ->
+      match iOpt with 
+      | Some i -> [| tsi.[i] |]
+      | None -> tsi
+    |> Array.mapFold (drawIcosaSection toSimpleCart colourer state ts) None
 
   let solidViewIcosaSection rOpt iOpt colourer state ts =
     let (elts, newCache) = 
       drawAllIcosaSections iOpt rOpt colourer state ts
     state.callbacks.onUpdateCallback [concat3 "Triangles" elts]
     newCache 
+
+  let solidViewGeoMesh iOpt colourer state ts =
+    let (elts, newCache) = 
+      drawAllIcosaSectionsGeoMesh iOpt colourer state ts
+    state.callbacks.onUpdateCallback [concat3 "Triangles" elts]
+    newCache 
+
 
   let solidViewMercator state = 
     
@@ -107,6 +128,7 @@ module AtlasViewFunctions =
     | ClusterAssignment (cas, vc) -> cas.meshData
     | ClusterFinished cf -> cf.meshData
     | TectonicAssigned tec -> tec.cca.meshData
+    | GeoDivision gds -> gds.tectData.cca.meshData
     | _ -> failwith <| sprintf "No triangles set for %A" s
     
   let extractClusterData s =
@@ -114,43 +136,52 @@ module AtlasViewFunctions =
     | ClusterAssignment (cas,_) -> renderCAS cas
     | ClusterFinished cf -> renderCCS cf
     | TectonicAssigned tec -> tec.cca |> renderCCS
+    | GeoDivision gds -> gds.tectData.cca |> renderCCS
     | _ -> failwith <| sprintf "No cluster data for %A" s
         
   let extractCompleteClusterData s =
     match s with
     | ClusterFinished cf -> cf
     | TectonicAssigned td -> td.cca
+    | GeoDivision gds -> gds.tectData.cca
     | _ -> failwith <| sprintf "No cluster data for %A" s
 
   let extractTectonicData s =
     match s with
     | TectonicAssigned td -> td
+    | GeoDivision gds -> gds.tectData
     | _ -> failwith <| sprintf "No tectonic data for %A" s
     
-  let updateIcosaView iOpt cs state =
-    let colours = 
-      match cs with 
-      | GrayScale ->        uniformHue 20.0
-      | TectonicColours None ->  tectonicColours <| extractClusterData state.model
-      | TectonicColours (Some targetIdx) ->  
-        let cd = extractClusterData state.model
-        let targetId = targetIdx + 1
-        tectonicColoursFiltered targetId <| cd
-      | TectonicLocalCoordColours None ->  tectonicRThColours (extractTriangleSet state.model) None <| extractCompleteClusterData state.model
-      | TectonicLocalCoordColours (Some targetIdx) ->  
-        let targetId = targetIdx + 1
-        tectonicRThColours (extractTriangleSet state.model) (Some targetId) <| extractCompleteClusterData state.model
-      | TectonicStressColours iOpt -> 
-        tectonicStressColours (extractTriangleSet state.model) (iOpt |> Option.map(fun i -> i+1)) <| extractTectonicData state.model
-      | TectonicHeightBiasColours (iOpt, hbType, _) ->
-        match hbType with
-        | HB_Flat -> tectonicFlatHeight (extractTriangleSet state.model) (iOpt |> Option.map(fun i -> i+1)) <| extractTectonicData state.model
-        | HB_None -> tectonicColours <| extractClusterData state.model
-        | _ -> failwith "nyi"
-      | TectonicHeightBias (iOpt) ->
-        tectonicHeightColours 1.0 (extractTriangleSet state.model) (iOpt |> Option.map(fun i -> i+1)) <| extractTectonicData state.model
-        
+  let extractGeoMesh s = 
+    match s with
+    | GeoDivision gds -> gds.triangleSet
+    | _ -> failwith <| sprintf "No GeoMesh set for %A" s
 
+  let getColourer iOpt cs state =
+    match cs with 
+    | GrayScale ->        uniformHue 20.0
+    | TectonicColours None ->  tectonicColours <| extractClusterData state.model
+    | TectonicColours (Some targetIdx) ->  
+      let cd = extractClusterData state.model
+      let targetId = targetIdx + 1
+      tectonicColoursFiltered targetId <| cd
+    | TectonicLocalCoordColours None ->  tectonicRThColours (extractTriangleSet state.model) None <| extractCompleteClusterData state.model
+    | TectonicLocalCoordColours (Some targetIdx) ->  
+      let targetId = targetIdx + 1
+      tectonicRThColours (extractTriangleSet state.model) (Some targetId) <| extractCompleteClusterData state.model
+    | TectonicStressColours iOpt -> 
+      tectonicStressColours (extractTriangleSet state.model) (iOpt |> Option.map(fun i -> i+1)) <| extractTectonicData state.model
+    | TectonicHeightBiasColours (iOpt, hbType, _) ->
+      match hbType with
+      | HB_Flat -> tectonicFlatHeight (extractTriangleSet state.model) (iOpt |> Option.map(fun i -> i+1)) <| extractTectonicData state.model
+      | HB_None -> tectonicColours <| extractClusterData state.model
+      | _ -> failwith "nyi"
+    | TectonicHeightBias (iOpt) ->
+      tectonicHeightColours 1.0 (extractTriangleSet state.model) (iOpt |> Option.map(fun i -> i+1)) <| extractTectonicData state.model
+    
+    
+  let updateIcosaView iOpt cs state =
+    let colours = getColourer iOpt cs state
     let rOpt = 
       match cs with
       | TectonicHeightBiasColours (iOpt, _, x) -> 
@@ -166,6 +197,11 @@ module AtlasViewFunctions =
       | _ -> Choice1Of2  1.0
 
     solidViewIcosaSection rOpt iOpt colours state (extractTriangleSet state.model)
+
+    
+  let updateGeoMeshView iOpt cs state =
+    let colours = getColourer iOpt cs state
+    solidViewGeoMesh iOpt colours state (extractGeoMesh state.model)
         
   let updateClusterView cs state =
     let colours = 

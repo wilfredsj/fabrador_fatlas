@@ -1,0 +1,77 @@
+﻿namespace FAtlas
+
+open CoordTypes
+open CoordFunctions
+
+open TriangleMeshTypes
+open TriangleMeshFunctions
+
+open TectonicTypes
+open TectonicFunctions
+
+open GeoMeshTypes
+
+module GeoMeshFunctions =
+  
+  let fakeCart gmd =
+    cartFromSphere gmd.location
+
+  let actualCart gmd =
+    cartFromSphereWithRadius gmd.r gmd.location
+
+  let convertOnePoint (rng : System.Random) param (td : TectonicData<'A>) scale url (point : KeyedPoint<Coordinate>) =
+    let c =
+      td.cca.clusterAssignments
+      |> Map.find url
+    let fakeCart = cartFromSphere point.datum
+    let ((bias, stress), _) = getStressedHeightBiasAndStress td.plates.[c-1] fakeCart
+
+    let baseHeight = heightBiasToHeight param bias
+    let baseVol = stressToVol param stress
+
+    let (actualHeight, actualVol) = sampleHeightVol rng scale param baseHeight baseVol
+
+    let p = {
+      location = point.datum
+      r = actualHeight
+      hVol = actualVol
+    }
+    {
+      datum = p
+      key = point.key
+    }
+    
+  let createGeoGridFromBase rng param (td : TectonicData<'A>) =
+    let triangleSet = td.cca.meshData
+    let newTriangleSets = 
+      triangleSet.triangles
+      |> Array.mapi (
+        fun t ts ->
+          let newPoints = 
+            ts.points
+            |> Array.mapi(fun i arri ->
+              arri
+              |> Array.mapi(fun j elt ->
+                let url = { t = t; i = i; j = j} |> normalizeElement triangleSet
+                convertOnePoint rng param td (float ts.scale) url elt
+                )
+                )
+          {
+            points = newPoints;
+            keys = ts.keys;
+            scale = ts.scale
+          }
+        )
+    let gts = {
+      triangles = newTriangleSets
+      frame = triangleSet.frame
+      trianglesByEdge = triangleSet.trianglesByEdge
+      trianglesByVertex = triangleSet.trianglesByVertex
+    }
+    {
+      triangleSet = gts;
+      geoParams = param;
+      tectData = td
+    }
+
+
