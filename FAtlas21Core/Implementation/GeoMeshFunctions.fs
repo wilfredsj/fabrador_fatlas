@@ -34,11 +34,34 @@ module GeoMeshFunctions =
     let p = {
       location = point.datum
       r = actualHeight
-      hVol = actualVol
+      rVol = actualVol
     }
     {
       datum = p
       key = point.key
+    }
+    
+    
+  let interpolateGMD rng param scaleInt a b newKey =
+    let fscale = float scaleInt
+    let midPoint = (fakeCart a.datum + (fakeCart b.datum)) * 0.5
+    let baseHeight = (a.datum.r + b.datum.r) * 0.5
+    let baseVol = (a.datum.rVol + b.datum.rVol) * 0.5
+    let (actualHeight, actualVol) = sampleHeightVol rng fscale param baseHeight baseVol
+    let p = {
+      location = midPoint |> coordFromCart
+      r = actualHeight
+      rVol = actualVol
+    }
+    {
+      datum = p
+      key = newKey
+    }
+
+  let divideGeoMesh rng param (gds : GeoDivisionState<'A>) =
+    let ts' = divideTriangleSet (interpolateGMD rng param) gds.triangleSet
+    {
+      gds with triangleSet = ts'
     }
     
   let createGeoGridFromBase rng param (td : TectonicData<'A>) =
@@ -73,5 +96,3 @@ module GeoMeshFunctions =
       geoParams = param;
       tectData = td
     }
-
-

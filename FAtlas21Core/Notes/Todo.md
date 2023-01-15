@@ -21,26 +21,27 @@
   //       -25: Implement some shader for 2D projection
   //       -28: Change rotation directions
   //       -30: Reverse/Stop rotation direction
-  //       -15: unparameterised boundary
-  //       -9:  parameterise boundary of cluster (able to determine (r,th') coordinates
-  //       -16: render mode to see raw boundary
+  //       -15: Unparameterised boundary
+  //       -9:  Parameterize boundary of cluster (able to determine (r,th') coordinates
+  //       -16: Render mode to see raw boundary
   //       -31: Find out why boundary of idx=8/idx=18 not correct in default RNG seed (1138)
-  //       -17: render mode to see (r',th') from parameterised boundary *on the boundary*
-  //       -32: render mode to see (r',th') from parameterised boundary *on the icosagrid*
+  //       -17: Render mode to see (r',th') from parameterised boundary *on the boundary*
+  //       -32: Render mode to see (r',th') from parameterised boundary *on the icosagrid*
   //       -33: Same as -32 but apparently done again??
   //       -34: Seems non-mercator projection is broken (GL function call ordering)
-  //       -8:  assign base heights to clusters
-  //       -10: assign momentum to cluster
-  //       -11: stress function based on momentum
-  //       -12: render mode for stress
-  //       -36: stress should be based on dot of dV with dX
-  //       -13: render mode for base height
+  //       -8:  Assign base heights to clusters
+  //       -10: Assign momentum to cluster
+  //       -11: Stress function based on momentum
+  //       -12: Render mode for stress
+  //       -36: Stress should be based on dot of dV with dX
+  //       -13: Render mode for base height
   //       -41: Render mode using actual 'r' coordinate from e.g. flat height bias
-  //       -37: render mode for flat interpolated (zero-stress) height
-  //       -38: implement API to get stressed height for from the isogrid
-  //       -39: render mode for stressed height
+  //       -37: Render mode for flat interpolated (zero-stress) height
+  //       -38: Implement API to get stressed height for from the isogrid
+  //       -39: Render mode for stressed height
   //       -42: Render mode using colour for contours
   //       -43: Think about how to sample from height bias -> height.
+  //       -44: Implement division on GeoMesh
 
 
   // TODO:
@@ -48,9 +49,9 @@
   //       -29: Solve gimbal lock in at least euclidean case
   //       -35: Some kind of legend for colour scale
   //       -40: Remove mystery Geo_ implementation file
-  //       -44: Implement division on GeoMesh
   //       -45: Work out how to test / visual hardcoded parameters
-
+  //       -46: Change sampleHeightVol to use joint normal, at least in some settings
+  //       -47: Do we need SphereMeshTypes / SphereMeshFunctions files at all? Can move the comments to Notes.md
 
 
 

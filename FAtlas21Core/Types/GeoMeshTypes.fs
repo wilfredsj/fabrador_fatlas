@@ -6,7 +6,7 @@ open TectonicTypes
 
 module GeoMeshTypes =
   
-  type GeoMeshDatum = { location : Coordinate; r : float; hVol : float }
+  type GeoMeshDatum = { location : Coordinate; r : float; rVol : float }
 
   type GeoMeshCoord = KeyedPoint<GeoMeshDatum>
 

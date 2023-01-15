@@ -32,14 +32,17 @@ module TectonicFunctions =
   let createIcosahedron () =
     TriangleMeshFunctions.createIcosahedronSet maker
 
-  let interpolate (a : KeyedPoint<Coordinate>) (b : KeyedPoint<Coordinate>) newKey =
+  let interpolate scale (a : KeyedPoint<Coordinate>) (b : KeyedPoint<Coordinate>) newKey =
     let midPoint = (cartFromSphere a.datum + (cartFromSphere b.datum)) * 0.5
     maker newKey midPoint
 
-  let divideIcosahedron ts =
-    let initCache = Map.empty<(char*int) list, KeyedPoint<Coordinate>>
+  let divideTriangleSet interpFn ts =
+    let initCache = Map.empty<'A, 'B>
     let getKey t = t.key
-    singleDivideTriangleSet initCache (fun ts -> makeEmptyTriangle ts.keys) getKey interpolate ts
+    singleDivideTriangleSet initCache (fun ts -> makeEmptyTriangle ts.keys) getKey interpFn ts
+
+  let divideIcosahedron ts =
+    divideTriangleSet interpolate ts
 
   let makeCluster ts id hub = 
     let border = getVertexNeighboursFromUrl ts hub |> Set.ofList
@@ -883,8 +886,11 @@ module TectonicFunctions =
     match param with
     | TP_Default tdp ->
       let volUsed = baseVol / distanceScaleFactor
-      let u = rng.NextDouble()
-      let v = rng.NextDouble()
+      let u = 2.0 * rng.NextDouble() - 1.0
+      let v = 2.0 * rng.NextDouble() - 1.0
+      // This is wrong, v' is no longer [-1,1]
+      // Easier solution is switch to sampling joint normal 
+
       let (u',v') = correlate tdp.dh_dh_correl u v
       let h' =
         if tdp.isVolMultiplicative then
@@ -892,7 +898,7 @@ module TectonicFunctions =
         else
           baseHeight + u' * volUsed
       let v' =
-        baseVol * (1.0 + v' * baseVol)
+        baseVol * (1.0 + v' * volUsed)
       (h', v')
           
 

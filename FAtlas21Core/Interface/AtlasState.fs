@@ -129,6 +129,11 @@ module Interface =
     let geoGrid = createGeoGridFromBase rng param td
     { state with model = GeoDivision geoGrid }
 
+  let divideGeoMeshWithDefaults gds = 
+    let param = defaultTechParams
+    let gds' = divideGeoMesh rng param gds
+    gds'
+
   let blankState state =
     let data = createIcosahedron()
     let newModel = IcosaDivision data
@@ -199,6 +204,10 @@ module Interface =
             [1 .. i] 
             |> List.fold (fun t i -> divideIcosahedron t) ts
             |> IcosaDivision
+          | GeoDivision gds -> 
+            [1 .. i] 
+            |> List.fold (fun t i -> divideGeoMeshWithDefaults t) gds
+            |> GeoDivision
           | x -> x
         let ns = { state with model = newModel }
         updateView ns

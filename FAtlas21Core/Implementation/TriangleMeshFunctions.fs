@@ -157,11 +157,13 @@ module TriangleMeshFunctions =
     let newKeys = e00 @ eb1b 
     (newKeys, Array.init(2 * B) creation)
 
-  let divideWholeTriangle getPoints makeEmpty getKey pointInterpolator lookup triangle =
+  let divideWholeTriangle getPoints getScale makeEmpty getKey pointInterpolatorIn lookup triangle =
     let basePoints = getPoints triangle
     let N = basePoints|> Array.length
     let N' = (2 * (N - 1))
     let newTriangle = makeEmpty triangle N'
+    let scale = getScale triangle
+    let pointInterpolator = pointInterpolatorIn scale
     let newPoints = getPoints newTriangle
     let newPoints' = 
       basePoints
@@ -183,8 +185,9 @@ module TriangleMeshFunctions =
   let singleDivideTriangleSet initCache makeEmpty getKey interpolator triangleSet =
     let output = { triangleSet with triangles = Array.copy triangleSet.triangles } 
     let getPoints (ts : SingleTriangle<'A>) = (ts.points)
+    let getScale (ts : SingleTriangle<'A>) = (ts.scale)
     let foldFn (cache, i) triangle = 
-      let (cache', triangle') = divideWholeTriangle getPoints makeEmpty getKey interpolator cache triangle
+      let (cache', triangle') = divideWholeTriangle getPoints getScale makeEmpty getKey interpolator cache triangle
       output.triangles.[i] <- triangle'
       (cache', i+1)
     triangleSet.triangles |> Array.fold foldFn (initCache, 0) |> ignore
