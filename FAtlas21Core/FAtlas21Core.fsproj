@@ -5,6 +5,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Include="Notes\PolygonLayerNotes.md" />
     <None Include="Notes\Notes.md" />
     <None Include="Notes\Todo.md" />
     <Compile Include="Types\CoordTypes.fs" />
@@ -12,7 +13,6 @@
     <Compile Include="Types\TriangleMeshTypes.fs" />
     <Compile Include="Types\TriangleLookupTypes.fs" />
     <Compile Include="Types\TectonicTypes.fs" />
-    <Compile Include="Types\SphereMeshTypes.fs" />
     <Compile Include="Types\TriangleTypes.fs" />
     <Compile Include="Types\GeoMeshTypes.fs" />
     <Compile Include="Implementation\MathUtils.fs" />
@@ -21,7 +21,6 @@
     <Compile Include="Implementation\TriangleLookupFunctions.fs" />
     <Compile Include="Implementation\TriangleInterpolationFunctions.fs" />
     <Compile Include="Implementation\TectonicFunctions.fs" />
-    <Compile Include="Implementation\SphereMeshFunctions.fs" />
     <Compile Include="Implementation\TectonicFunctionsNonProd.fs" />
     <Compile Include="Implementation\GeoMeshFunctions.fs" />
     <Compile Include="View\ViewUtilityFunctions.fs" />

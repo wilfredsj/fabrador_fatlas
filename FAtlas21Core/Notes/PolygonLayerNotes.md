@@ -1,21 +1,4 @@
-﻿namespace FAtlas
-
-open CoordTypes
-
-module SphereMeshTypes =
-  type CoordinateKeys = (char*int) list
-  type PolygonFrame = { frameMap : Map<char, Coordinate> }
-  type VPolygon = { key : CoordinateKeys; centroid : Coordinate }
-  type VEdge = { key1 : CoordinateKeys; key2 : CoordinateKeys }
-
-  type Polygon = Cartesian list
-
-  type KeyTriangle = { keys :  CoordinateKeys [] }
-  type CoordTriangle = { kt : KeyTriangle; vertices : Coordinate [] }
-
-
-
-
+﻿
 
   //  Update 2021-12-04
 
@@ -83,4 +66,3 @@ module SphereMeshTypes =
   //  faceMembership : Map<CoordinateKeys, KeyTriangle []>; 
   //  edgeNeighbours : Map<CoordinateKeys, CoordinateKeys []>}
 
-  

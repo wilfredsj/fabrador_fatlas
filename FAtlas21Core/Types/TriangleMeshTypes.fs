@@ -3,6 +3,7 @@
 open CoordTypes
 
 module TriangleMeshTypes =
+  type CoordinateKeys = (char*int) list
 
   type TriangleFrame = { frameMap : Map<char, Cartesian>; scaleFactor : int }
 

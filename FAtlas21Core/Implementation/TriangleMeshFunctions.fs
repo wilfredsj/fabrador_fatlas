@@ -2,7 +2,7 @@
 
 
 open CoordTypes
-open SphereMeshTypes
+//open SphereMeshTypes
 open TriangleTypes
 open TriangleMeshTypes
 open CoordFunctions

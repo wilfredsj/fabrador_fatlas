@@ -47,6 +47,7 @@
   //       -50: Render mode with colours floored at 'sea' level
   //       -51: Render mode with radius floored at 'sea' level
   //       -40: Remove mystery Geo_ implementation file
+  //       -47: Do we need SphereMeshTypes / SphereMeshFunctions files at all? Can move the comments to Notes.md
 
 
   // TODO:
@@ -55,7 +56,6 @@
   //       -35: Some kind of legend for colour scale
   //       -45: Work out how to test / visual hardcoded parameters
   //       -46: Change sampleHeightVol to use joint normal, at least in some settings
-  //       -47: Do we need SphereMeshTypes / SphereMeshFunctions files at all? Can move the comments to Notes.md
   //       -52: Id Land masses
   //       -53: Id sea bodies
   //       -54: ID drainage basins
