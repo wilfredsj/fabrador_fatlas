@@ -66,8 +66,12 @@ module AtlasViewFunctions =
       | None -> tsi
     |> Array.mapFold (drawIcosaSection toSimpleCart colourer state ts) None
 
-  let drawAllIcosaSectionsGeoMesh iOpt colourer state ts =
-    let toSimpleCart = fun i ij (coord : 'A) -> actualCart coord.datum
+  let drawAllIcosaSectionsGeoMesh iOpt floored colourer state ts =
+    let toSimpleCart = 
+      if floored then 
+        fun i ij (coord : 'A) -> actualCartFloored coord.datum
+      else
+        fun i ij (coord : 'A) -> actualCart coord.datum
     ts.triangles 
     |> Array.indexed
     |> fun tsi ->
@@ -82,9 +86,9 @@ module AtlasViewFunctions =
     state.callbacks.onUpdateCallback [concat3 "Triangles" elts]
     newCache 
 
-  let solidViewGeoMesh iOpt colourer state ts =
+  let solidViewGeoMesh iOpt floored colourer state ts =
     let (elts, newCache) = 
-      drawAllIcosaSectionsGeoMesh iOpt colourer state ts
+      drawAllIcosaSectionsGeoMesh iOpt floored colourer state ts
     state.callbacks.onUpdateCallback [concat3 "Triangles" elts]
     newCache 
 
@@ -215,7 +219,7 @@ module AtlasViewFunctions =
     solidViewIcosaSection rOpt iOpt colours state (extractTriangleSet state.model)
 
     
-  let updateGeoMeshView iOpt cs state =
+  let updateGeoMeshView iOpt floored cs state =
     let colours = 
       colourerForFineGrid cs state
       |> function 
@@ -223,7 +227,7 @@ module AtlasViewFunctions =
          | None -> 
             colourerForCoarseGrid cs state
             |> maybeRescaleFunction (extractTriangleSet state.model) (extractFineTriangleSet state.model) 
-    solidViewGeoMesh iOpt colours state (extractGeoMesh state.model)
+    solidViewGeoMesh iOpt floored colours state (extractGeoMesh state.model)
         
   let updateClusterView cs state =
     let colours = 

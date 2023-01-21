@@ -19,6 +19,9 @@ module GeoMeshFunctions =
   let actualCart gmd =
     cartFromSphereWithRadius gmd.r gmd.location
 
+  let actualCartFloored gmd =
+    cartFromSphereWithRadius (max gmd.r 1.0) gmd.location
+
   let convertOnePoint (rng : System.Random) param (td : TectonicData<'A>) scale url (point : KeyedPoint<Coordinate>) =
     let c =
       td.cca.clusterAssignments

@@ -35,7 +35,7 @@ module AtlasStateTypes =
   | ClusterView of ClusterViewArgs
   | BorderView of BorderViewMode*(int Option)
   | MercatorView
-  | GeoMeshView of ColourScheme*(int Option)
+  | GeoMeshView of ColourScheme*(int Option)*bool
 
   let sprintRenderMode =
     function
@@ -44,7 +44,7 @@ module AtlasStateTypes =
     | IcosaViewFiltered (cs,i)-> sprintf "IcosaViewFiltered %A %i" cs i
     | ClusterView cs -> sprintf "ClusterView %A" cs
     | BorderView (cs,i) -> sprintf "BorderView %A %A" cs i
-    | GeoMeshView (cs,iOpt)-> sprintf "GeoMeshView %A %A" cs iOpt
+    | GeoMeshView (cs,iOpt,b)-> sprintf "GeoMeshView %A %A %b" cs iOpt b
     | MercatorView -> "MercatorView"
 
   type RenderRotationAction =

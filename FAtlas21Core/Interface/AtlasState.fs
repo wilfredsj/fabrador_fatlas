@@ -23,7 +23,7 @@ module Interface =
     | ClusterAssignment _ ->     IcosaView (TectonicColours None)
     | ClusterFinished _ ->       ClusterView { colours = (TectonicColours None); wireframeConnections = true }
     | TectonicAssigned _ ->      IcosaView GrayScale
-    | GeoDivision _ ->           GeoMeshView (GrayScale, None)
+    | GeoDivision _ ->           GeoMeshView (GrayScale, None, false)
   
   let isSupportedRenderState state =
     match state.render with
@@ -90,7 +90,7 @@ module Interface =
     match renderModeUsed with
     | IcosaView cs ->       updateIcosaView None cs state 
     | IcosaViewFiltered (cs,i) ->       updateIcosaView (Some i) cs state 
-    | GeoMeshView (cs,iOpt) ->       updateGeoMeshView iOpt cs state 
+    | GeoMeshView (cs,iOpt,b) ->       updateGeoMeshView iOpt b cs state 
     | ClusterView cs ->     updateClusterView cs state
     | MercatorView ->
         solidViewMercator state
