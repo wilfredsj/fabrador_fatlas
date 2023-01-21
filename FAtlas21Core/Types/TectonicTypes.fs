@@ -192,8 +192,8 @@ module TectonicTypes =
     TP_Default {
       heightBiasScale = 0.1
       isVolMultiplicative = true
-      volScale = 0.1
-      volOfVol = 0.1
-      dh_dh_correl = 0.5
+      volScale = 0.2
+      volOfVol = 0.2
+      dh_dh_correl = 0.8
     }
 

@@ -44,6 +44,7 @@
   //       -44: Implement division on GeoMesh
   //       -48: Geo render mode with stress
   //       -49: Fix upsample / downsample issue with GeoMeshView
+  //       -50: Render mode with colours floored at 'sea' level
 
 
   // TODO:
@@ -54,6 +55,7 @@
   //       -45: Work out how to test / visual hardcoded parameters
   //       -46: Change sampleHeightVol to use joint normal, at least in some settings
   //       -47: Do we need SphereMeshTypes / SphereMeshFunctions files at all? Can move the comments to Notes.md
+  //       -51: Render mode with radius floored at 'sea' level
 
 
 

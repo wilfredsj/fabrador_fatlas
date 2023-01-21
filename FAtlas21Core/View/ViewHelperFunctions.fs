@@ -19,9 +19,6 @@ module ViewHelperFunctions =
     
   let getNp1TS ts = 
     getNp1 ts.triangles.[0]
-    
-  let grayscale mkColour i ij k = ((i * 79) % 71) |> float32 |> fun y -> (y / 71.0f) * 0.4f + 0.1f |> fun z -> (z,z,z) |> mkColour
-  let allGray mkColour i ij k = 0.7f |> fun z -> (z,z,z) |> mkColour
   
   // Each input set of indices is index *within its own slice*
   // So the indices will be different in the aggregated output for i>1)
@@ -146,4 +143,5 @@ module ViewHelperFunctions =
     // f(1/1.5) = -1
     // f(1.5) = 1
     continuousPositiveHue 1.0 1.0 1.5 mkColour r'
+    
         

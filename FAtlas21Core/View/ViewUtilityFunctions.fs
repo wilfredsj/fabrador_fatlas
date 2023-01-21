@@ -4,6 +4,10 @@ open ColourTypes
 
 module ViewUtilityFunctions =
     
+    
+  let grayscale mkColour i ij k = ((i * 79) % 71) |> float32 |> fun y -> (y / 71.0f) * 0.4f + 0.1f |> fun z -> (z,z,z) |> mkColour
+  let allGray mkColour i ij k = 0.7f |> fun z -> (z,z,z) |> mkColour
+
   let uniformHue max mkColour i ij k = rangeToFullSat 0.0 max (float i) |> makeRGB |> mkColour
   let uniformHue2 sat value max mkColour i ij k = rangeWithSatValue sat value 0.0 max (float i) |> makeRGB |> mkColour
   let uniformHueSat sat value max mkColour x = rangeWithSatValue sat value 0.0 max x |> makeRGB |> mkColour

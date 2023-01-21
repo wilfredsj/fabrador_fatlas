@@ -14,6 +14,7 @@ open GeoMeshFunctions
 
 open TriangleMeshToRender
 open TectonicViewFunctions
+open GeoMeshViewFunctions
 
 open ViewHelperFunctions
 open AtlasStateTypes
@@ -162,7 +163,7 @@ module AtlasViewFunctions =
     | GeoDivision gds -> gds.triangleSet
     | _ -> failwith <| sprintf "No GeoMesh set for %A" s
 
-  let getColourer cs state =
+  let colourerForCoarseGrid cs state =
     match cs with 
     | GrayScale ->        uniformHue 20.0
     | TectonicColours None ->  tectonicColours <| extractClusterData state.model
@@ -183,10 +184,20 @@ module AtlasViewFunctions =
       | _ -> failwith "nyi"
     | TectonicHeightBias (iOpt) ->
       tectonicHeightColours 1.0 (extractTriangleSet state.model) (iOpt |> Option.map(fun i -> i+1)) <| extractTectonicData state.model
-    
+    | HeightBestEffort _ -> 
+      tectonicHeightColours 1.0 (extractTriangleSet state.model) None <| extractTectonicData state.model
+      
+  
+  let colourerForFineGrid cs state =
+    match cs with
+    | GrayScale -> None
+    | HeightBestEffort floored ->
+      actualHeightColours floored <| (extractFineTriangleSet state.model)
+      |> Some
+    | _ -> None
     
   let updateIcosaView iOpt cs state =
-    let colours = getColourer cs state
+    let colours = colourerForCoarseGrid cs state
     let rOpt = 
       match cs with
       | TectonicHeightBiasColours (jOpt, _, x) -> 
@@ -205,9 +216,14 @@ module AtlasViewFunctions =
 
     
   let updateGeoMeshView iOpt cs state =
-    let colours = getColourer cs state
-    let colours' = maybeRescaleFunction (extractTriangleSet state.model) (extractFineTriangleSet state.model) colours
-    solidViewGeoMesh iOpt colours' state (extractGeoMesh state.model)
+    let colours = 
+      colourerForFineGrid cs state
+      |> function 
+         | Some (colourer) -> colourer
+         | None -> 
+            colourerForCoarseGrid cs state
+            |> maybeRescaleFunction (extractTriangleSet state.model) (extractFineTriangleSet state.model) 
+    solidViewGeoMesh iOpt colours state (extractGeoMesh state.model)
         
   let updateClusterView cs state =
     let colours = 
