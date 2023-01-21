@@ -78,7 +78,25 @@ module ViewHelperFunctions =
       | None -> grayscale mkColour i ij k
       | Some(c) -> uniformHue2 0.6f 0.6f nc mkColour c ij k
 
-  let tectonicStressColours ts jOpt (tecState : TectonicData<'A>) mkColour i ij k =
+  let maybeRescaleFunction dataTriangleSet renderTriangleSet underlying mkColour i ij k =
+    let dataMeshSize = dataTriangleSet.triangles.[i].scale
+    let renderMeshSize = renderTriangleSet.triangles.[i].scale
+    if dataMeshSize = renderMeshSize then
+      underlying mkColour i ij k
+    else 
+      let renderUrl = { t = i; i = fst ij; j = snd ij} 
+      let dataUrl' = 
+        if dataMeshSize > renderMeshSize then
+          // Render mesh is coarser - need to upscale the render Url
+          let mult = dataMeshSize / renderMeshSize
+          { renderUrl with i = (renderUrl.i * mult); j = (renderUrl.j * mult)}
+        else
+          // Render mesh is finer - need to downscale the render Url
+          let mult = renderMeshSize / dataMeshSize
+          { renderUrl with i = (renderUrl.i / mult); j = (renderUrl.j / mult)}
+      underlying mkColour dataUrl'.t (dataUrl'.i, dataUrl'.j) k
+
+  let tectonicStressColours (ts : TriangleSet<'B>) jOpt (tecState : TectonicData<'A>) mkColour i ij k =
     let jUsed = jOpt |> Option.defaultValue -1
     let url = { t = i; i = fst ij; j = snd ij} |> normalizeElement ts
     let nc = tecState.cca.allClusters |> Array.length |> fun x -> float (x - 1) 
@@ -86,6 +104,7 @@ module ViewHelperFunctions =
     |> function 
       | Some(c) when c=jUsed || jUsed < 0 -> localStressView mkColour tecState c url
       | _ -> grayscale mkColour i ij k
+      
     
   
   let tectonicFlatHeight ts jOpt (tecState : TectonicData<'A>) mkColour i ij k =

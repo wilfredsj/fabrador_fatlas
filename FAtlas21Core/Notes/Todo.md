@@ -42,6 +42,8 @@
   //       -42: Render mode using colour for contours
   //       -43: Think about how to sample from height bias -> height.
   //       -44: Implement division on GeoMesh
+  //       -48: Geo render mode with stress
+  //       -49: Fix upsample / downsample issue with GeoMeshView
 
 
   // TODO:

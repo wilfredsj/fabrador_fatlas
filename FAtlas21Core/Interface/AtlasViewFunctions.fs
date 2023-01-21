@@ -130,6 +130,11 @@ module AtlasViewFunctions =
     | TectonicAssigned tec -> tec.cca.meshData
     | GeoDivision gds -> gds.tectData.cca.meshData
     | _ -> failwith <| sprintf "No triangles set for %A" s
+
+  let extractFineTriangleSet s = 
+    match s with
+    | GeoDivision gds -> gds.triangleSet
+    | _ -> failwith <| sprintf "No fine triangles set for %A" s
     
   let extractClusterData s =
     match s with
@@ -157,7 +162,7 @@ module AtlasViewFunctions =
     | GeoDivision gds -> gds.triangleSet
     | _ -> failwith <| sprintf "No GeoMesh set for %A" s
 
-  let getColourer iOpt cs state =
+  let getColourer cs state =
     match cs with 
     | GrayScale ->        uniformHue 20.0
     | TectonicColours None ->  tectonicColours <| extractClusterData state.model
@@ -181,17 +186,17 @@ module AtlasViewFunctions =
     
     
   let updateIcosaView iOpt cs state =
-    let colours = getColourer iOpt cs state
+    let colours = getColourer cs state
     let rOpt = 
       match cs with
-      | TectonicHeightBiasColours (iOpt, _, x) -> 
+      | TectonicHeightBiasColours (jOpt, _, x) -> 
           let fn = 
             match x with
             | HB_Flat -> getFlatHeightBias
             | HB_Linear -> getLinearHeightBias
             | HB_Stressed -> getStressedHeightBias
             | HB_None -> fun x y -> (0.0, 0.0/1.0)
-          Choice2Of2 <| (tectonicRadiusBiasFlatHeight 1.0 fn (extractTriangleSet state.model) (iOpt |> Option.map(fun i -> i+1)) <| extractTectonicData state.model)
+          Choice2Of2 <| (tectonicRadiusBiasFlatHeight 1.0 fn (extractTriangleSet state.model) (jOpt |> Option.map(fun i -> i+1)) <| extractTectonicData state.model)
       | TectonicHeightBias _ ->
         Choice2Of2 <| (tectonicRadiusBiasFlatHeight 1.0 getStressedHeightBias (extractTriangleSet state.model) (iOpt |> Option.map(fun i -> i+1)) <| extractTectonicData state.model)        
       | _ -> Choice1Of2  1.0
@@ -200,8 +205,9 @@ module AtlasViewFunctions =
 
     
   let updateGeoMeshView iOpt cs state =
-    let colours = getColourer iOpt cs state
-    solidViewGeoMesh iOpt colours state (extractGeoMesh state.model)
+    let colours = getColourer cs state
+    let colours' = maybeRescaleFunction (extractTriangleSet state.model) (extractFineTriangleSet state.model) colours
+    solidViewGeoMesh iOpt colours' state (extractGeoMesh state.model)
         
   let updateClusterView cs state =
     let colours = 
