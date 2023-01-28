@@ -155,6 +155,7 @@ let bindShader (cs :CompiledShader) =
       let location = GLL.GetUniformLocation(cs.handle, unif_name)
       match uf with
       | UM4(m, _) -> GLL.UniformMatrix4(location, false, ref m)
+      | UM4_Stateful(dets) -> GLL.UniformMatrix4(location, false, ref dets.matrix)
       | UV3(v, _) -> GLL.Uniform3(location, v)
       (unif_name, (location, uf)))
     |> Map.ofList
@@ -178,4 +179,12 @@ let incrementUniform location u =
       GL.UniformMatrix4(location, false, ref unif')
       UM4(unif', fOpt)
     | None -> UM4(unif, fOpt)
+  | UM4_Stateful(bk) -> 
+    match bk.updaterOpt with
+    | Some f -> 
+      let (unif', bookKeep') = f bk.bookKeep
+      GL.UniformMatrix4(location, false, ref unif')
+      let bk' = { matrix = unif'; bookKeep = bookKeep'; updaterOpt = bk.updaterOpt}
+      UM4_Stateful(bk')
+    | None -> UM4_Stateful(bk)
 

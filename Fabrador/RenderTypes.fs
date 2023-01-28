@@ -31,9 +31,17 @@ type ShaderProgramData = {
   colourInput : string option; 
   normalInput : string option }
 
+
+type M4BookKeep<'A> = {
+  matrix : Matrix4
+  bookKeep : 'A
+  updaterOpt : ('A -> (Matrix4 *'A)) Option
+}
+
 type SomeKindOfUniform =
   | UV3 of (Vector3 * (Vector3 -> Vector3) Option)
   | UM4 of (Matrix4 * (Matrix4 -> Matrix4) Option)
+  | UM4_Stateful of M4BookKeep<Matrix4*Matrix4*Matrix4>
 
 let makeShader vss fss =
   { fsSource = fss; 

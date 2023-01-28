@@ -147,7 +147,7 @@ void main(void)
     let euclideanUniforms = 
       ("modelview_matrix", UM4 (
         Matrix4.LookAt(new Vector3(0.0f, 3.0f, 5.0f), new Vector3(0.0f, 0.0f, 0.0f), new Vector3(0.0f, 1.0f, 0.0f)), 
-          Some <| rotateProjection -0.005f))
+          None))
       :: commonUniforms
     let msC = compileShaders mercatorShader mercatorUniforms
     let esC = compileShaders euclideanShader euclideanUniforms
@@ -181,24 +181,50 @@ void main(void)
     renderModel <- { renderModel with shader = shader; uniforms = uniforms }
 
   member o.changeRotationAxis rax =
-    let dTh = 0.005f
-    let rotation = 
-      match rax with
-      | FRAx_X dir -> Matrix4.CreateRotationX(if dir then dTh else -dTh)
-      | FRAx_Y dir -> Matrix4.CreateRotationY(if dir then dTh else -dTh)
-      | FRAx_Z dir -> Matrix4.CreateRotationZ(if dir then dTh else -dTh)
-      | FRAx_Stop-> Matrix4.Identity
-
-    let multOp = fun (matrix : Matrix4) -> Matrix4.Mult(rotation, matrix)
     let target_name = "modelview_matrix"
+
+
     let newUnif = 
       renderModel.uniforms
       |> Map.find target_name
       |> fun (i, unif) ->
         match unif with
-        | UM4(mx, f) -> 
-          (i, UM4(mx, Some(multOp)))
-        | _ -> (i, unif)
+        | UM4(mx, f) -> Some (mx, Matrix4.Identity)
+        | UM4_Stateful(bk) -> 
+          let (m, _, acc) = bk.bookKeep
+          Some(m, acc)
+        | _ -> None
+      |> function 
+          | Some (mx, accRotation) ->          
+            let dTh = 0.005f
+
+            let eyeVec = new Vector3(0.0f, 3.0f, 5.0f)
+            let upVec = new Vector3(0.0f, 1.0f, 0.0f)
+            let sideVec = Vector3.Cross(upVec, eyeVec).Normalized()
+            let upVec' = Vector3.Cross(sideVec, eyeVec).Normalized()
+
+            let baseRotation = 
+              match rax with
+              | FRAx_X dir -> Matrix4.CreateFromAxisAngle(upVec', if dir then dTh else -dTh)
+              | FRAx_Y dir -> Matrix4.CreateFromAxisAngle(sideVec, if dir then dTh else -dTh)
+              | FRAx_Z dir -> Matrix4.CreateFromAxisAngle(eyeVec, if dir then dTh else -dTh)
+              | FRAx_Stop-> Matrix4.Identity
+
+            let rotation = Matrix4.Mult(accRotation, Matrix4.Mult(baseRotation, accRotation.Inverted()))
+
+            let multOp2 = fun (state: Matrix4, currentRotation : Matrix4, accRotate : Matrix4) -> 
+                let acc' = Matrix4.Mult(currentRotation, accRotate)
+                let projection = Matrix4.Mult(acc', state)
+                (projection, (state, currentRotation, acc'))
+
+            let bk = {
+              matrix = mx;
+              bookKeep = (mx, rotation, accRotation)
+              updaterOpt = Some multOp2
+            }
+
+            (i, UM4_Stateful(bk))
+          | _ -> (i, unif)
 
     let uniforms' = Map.add target_name newUnif renderModel.uniforms
     renderModel <- { renderModel with uniforms = uniforms' }

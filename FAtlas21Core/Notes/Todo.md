@@ -48,18 +48,21 @@
   //       -51: Render mode with radius floored at 'sea' level
   //       -40: Remove mystery Geo_ implementation file
   //       -47: Do we need SphereMeshTypes / SphereMeshFunctions files at all? Can move the comments to Notes.md
+  //       -29: Solve gimbal lock in at least euclidean case
 
 
   // TODO:
   // AETHER
-  //       -29: Solve gimbal lock in at least euclidean case
   //       -35: Some kind of legend for colour scale
-  //       -45: Work out how to test / visual hardcoded parameters
+  //       -45: Work out how to test / visualize hardcoded parameters
   //       -46: Change sampleHeightVol to use joint normal, at least in some settings
   //       -52: Id Land masses
   //       -53: Id sea bodies
   //       -54: ID drainage basins
   //       -55: GeoMesh <-> file
-
+  //       -56: Console I/O version
+  //       -57: Can IsoGrid make Hex/Pent-like display
+  //       -58: Avoid DRY of Eye location / up in Euclidean gimbal-lock-avoid
+  //       -59: Solve gimbal lock in Mercator case
 
 

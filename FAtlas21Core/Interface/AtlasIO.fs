@@ -85,10 +85,10 @@ module AtlasIO =
 
 
     | "m" ->                   MercatorView |> NewRenderMode |> ExactMatch
-    | "aa" -> Rotate_X true  |> ForceRotate |> UIInstruction |> ExactMatch
+    | "aa" -> Rotate_X false  |> ForceRotate |> UIInstruction |> ExactMatch
     | "aw" -> Rotate_Y true  |> ForceRotate |> UIInstruction |> ExactMatch
     | "aq" -> Rotate_Z true  |> ForceRotate |> UIInstruction |> ExactMatch
-    | "ad" -> Rotate_X false |> ForceRotate |> UIInstruction |> ExactMatch
+    | "ad" -> Rotate_X true |> ForceRotate |> UIInstruction |> ExactMatch
     | "as" -> Rotate_Y false |> ForceRotate |> UIInstruction |> ExactMatch
     | "ae" -> Rotate_Z false |> ForceRotate |> UIInstruction |> ExactMatch
     | "az" ->    Rotate_Stop |> ForceRotate |> UIInstruction |> ExactMatch
