@@ -138,27 +138,36 @@ void main(void)
              None
             ))
       ]
+    let eyeMercator = new Vector3(0.0f, 0.0f, 0.2f)
+    let up = new Vector3(0.0f, 1.0f, 0.0f)
+    let origin = new Vector3(0.0f, 0.0f, 0.0f)
     let mercatorUniforms = 
       ("modelview_matrix", UM4 (
-        Matrix4.LookAt(new Vector3(0.0f, 0.0f, 0.2f), new Vector3(0.0f, 0.0f, 0.0f), new Vector3(0.0f, 1.0f, 0.0f)), 
+        Matrix4.LookAt(eyeMercator, origin, up), 
         Some <| rotateProjection -0.005f))
        :: commonUniforms
 
+    let eyeEuclidean = new Vector3(0.0f, 3.0f, 5.0f)
+
     let euclideanUniforms = 
       ("modelview_matrix", UM4 (
-        Matrix4.LookAt(new Vector3(0.0f, 3.0f, 5.0f), new Vector3(0.0f, 0.0f, 0.0f), new Vector3(0.0f, 1.0f, 0.0f)), 
+        Matrix4.LookAt(eyeEuclidean, origin, up), 
           None))
       :: commonUniforms
-    let msC = compileShaders mercatorShader mercatorUniforms
-    let esC = compileShaders euclideanShader euclideanUniforms
+    let dEyeMercator = (origin - eyeMercator).Normalized()
+    let dEyeEuclidean = (origin - eyeEuclidean).Normalized()
+    let msC = compileShaders mercatorShader mercatorUniforms (dEyeMercator, up)
+    let esC = compileShaders euclideanShader euclideanUniforms (dEyeEuclidean, up)
     
-    let (shader, uniforms) =  bindShader esC
+    let (shader, uniforms, eyeVec, upVec) =  bindShader esC
     { shader = shader;
       euclShader = esC;
       mercShader = msC;
       primitives = []; 
       uniforms = uniforms;
-      vaoHandleOpt = [] }
+      vaoHandleOpt = [];
+      eyeVec = eyeVec;
+      upVec = upVec }
 
 
 
@@ -173,12 +182,12 @@ void main(void)
     ()
 
   member o.forceEuclidean () =    
-    let (shader, uniforms) =  bindShader renderModel.euclShader
-    renderModel <- { renderModel with shader = shader; uniforms = uniforms }
+    let (shader, uniforms, eyeVec, upVec) =  bindShader renderModel.euclShader
+    renderModel <- { renderModel with shader = shader; uniforms = uniforms; eyeVec = eyeVec; upVec = upVec }
     
   member o.forceMercator () =
-    let (shader, uniforms) =  bindShader renderModel.mercShader
-    renderModel <- { renderModel with shader = shader; uniforms = uniforms }
+    let (shader, uniforms, eyeVec, upVec) =  bindShader renderModel.mercShader
+    renderModel <- { renderModel with shader = shader; uniforms = uniforms; eyeVec = eyeVec; upVec = upVec }
 
   member o.changeRotationAxis rax =
     let target_name = "modelview_matrix"
@@ -198,10 +207,10 @@ void main(void)
           | Some (mx, accRotation) ->          
             let dTh = 0.005f
 
-            let eyeVec = new Vector3(0.0f, 3.0f, 5.0f)
-            let upVec = new Vector3(0.0f, 1.0f, 0.0f)
-            let sideVec = Vector3.Cross(upVec, eyeVec).Normalized()
-            let upVec' = Vector3.Cross(sideVec, eyeVec).Normalized()
+            let eyeVec = renderModel.eyeVec
+            let upVec = renderModel.upVec
+            let sideVec = Vector3.Cross(eyeVec, upVec).Normalized()
+            let upVec' = Vector3.Cross(eyeVec, sideVec).Normalized()
 
             let baseRotation = 
               match rax with

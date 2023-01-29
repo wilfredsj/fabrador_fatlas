@@ -121,7 +121,7 @@ let bindIntoVAO (spd : BoundShader) (bhs : BoundPrimitiveGLData) =
   inVaoHandle vaoHandle myF ()
   { prim = bhs; vaoHandle = vaoHandle }
 
-let compileShaders (spd : ShaderProgramData) (defaultUniforms : (string*SomeKindOfUniform) list) =
+let compileShaders (spd : ShaderProgramData) (defaultUniforms : (string*SomeKindOfUniform) list) (eyeRel, up) =
   let vertexShaderHandle = GLL.CreateShader(ShaderType.VertexShader)
   let fragmentShaderHandle = GLL.CreateShader(ShaderType.FragmentShader)
 
@@ -143,7 +143,11 @@ let compileShaders (spd : ShaderProgramData) (defaultUniforms : (string*SomeKind
 
   let shaderError = GL.GetProgramInfoLog(shaderProgramHandle)
 
-  { details = spd; handle = shaderProgramHandle ; vsError = vsError; fsError = fsError; shaderError = shaderError; defaultUniforms = defaultUniforms }
+  { details = spd; handle = shaderProgramHandle ; 
+    vsError = vsError; fsError = fsError; shaderError = shaderError; 
+    defaultUniforms = defaultUniforms
+    eyeRel = eyeRel;
+    up = up }
 
 let bindShader (cs :CompiledShader) =
   // CG 20230107 - UseProgram needs to be called before the Uniform functions
@@ -161,7 +165,7 @@ let bindShader (cs :CompiledShader) =
     |> Map.ofList
 
 
-  ({ compiled = cs; handle = cs.handle }, uniforms)
+  ({ compiled = cs; handle = cs.handle }, uniforms, cs.eyeRel, cs.up)
 
 let incrementUniform location u = 
   match u with

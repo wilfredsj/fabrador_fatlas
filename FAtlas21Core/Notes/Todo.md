@@ -49,6 +49,8 @@
   //       -40: Remove mystery Geo_ implementation file
   //       -47: Do we need SphereMeshTypes / SphereMeshFunctions files at all? Can move the comments to Notes.md
   //       -29: Solve gimbal lock in at least euclidean case
+  //       -58: Avoid DRY of Eye location / up in Euclidean gimbal-lock-avoid
+  //       -59: Solve gimbal lock in Mercator case
 
 
   // TODO:
@@ -62,7 +64,5 @@
   //       -55: GeoMesh <-> file
   //       -56: Console I/O version
   //       -57: Can IsoGrid make Hex/Pent-like display
-  //       -58: Avoid DRY of Eye location / up in Euclidean gimbal-lock-avoid
-  //       -59: Solve gimbal lock in Mercator case
 
 

@@ -56,7 +56,9 @@ type CompiledShader = {
   handle : int; 
   fsError : string; 
   vsError : string; 
-  shaderError : string }
+  shaderError : string;
+  eyeRel : Vector3;
+  up : Vector3}
 
 type BoundShader = { compiled : CompiledShader; handle : int }
 
@@ -66,5 +68,7 @@ type RenderModel = {
   mercShader : CompiledShader;
   primitives : BoundPrimitiveGLData list; 
   uniforms : Map<string, int*SomeKindOfUniform>;  
-  vaoHandleOpt : BoundVaoPrimitiveData list
+  vaoHandleOpt : BoundVaoPrimitiveData list;
+  eyeVec : Vector3;
+  upVec : Vector3
 }
