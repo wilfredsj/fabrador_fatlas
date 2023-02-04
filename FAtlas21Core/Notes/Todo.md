@@ -51,6 +51,7 @@
   //       -29: Solve gimbal lock in at least euclidean case
   //       -58: Avoid DRY of Eye location / up in Euclidean gimbal-lock-avoid
   //       -59: Solve gimbal lock in Mercator case
+  //       -57: Can IsoGrid make Hex/Pent-like display
 
 
   // TODO:
@@ -62,7 +63,6 @@
   //       -53: Id sea bodies
   //       -54: ID drainage basins
   //       -55: GeoMesh <-> file
-  //       -56: Console I/O version
-  //       -57: Can IsoGrid make Hex/Pent-like display
-
+  //       -56: Console I/O version  
+  //       -60: Fixed Hex/Pent-like display
 

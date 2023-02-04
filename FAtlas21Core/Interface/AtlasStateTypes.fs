@@ -35,7 +35,7 @@ module AtlasStateTypes =
   | ClusterView of ClusterViewArgs
   | BorderView of BorderViewMode*(int Option)
   | MercatorView
-  | GeoMeshView of ColourScheme*(int Option)*bool
+  | GeoMeshView of ColourScheme*(int Option)*bool*bool
 
   let sprintRenderMode =
     function
@@ -44,7 +44,7 @@ module AtlasStateTypes =
     | IcosaViewFiltered (cs,i)-> sprintf "IcosaViewFiltered %A %i" cs i
     | ClusterView cs -> sprintf "ClusterView %A" cs
     | BorderView (cs,i) -> sprintf "BorderView %A %A" cs i
-    | GeoMeshView (cs,iOpt,b)-> sprintf "GeoMeshView %A %A %b" cs iOpt b
+    | GeoMeshView (cs,iOpt,b1,b2)-> sprintf "GeoMeshView %A %A %b %b" cs iOpt b1 b2
     | MercatorView -> "MercatorView"
 
   type RenderRotationAction =
@@ -88,6 +88,6 @@ module AtlasStateTypes =
     makeColour : A3V -> 'C; 
     onUpdateCallback : (('V []*'C[]*int[]*string) list) -> unit;
     uiCallbackOpt : UIUnitCallbacks Option}
-  type AtlasCache = { vertexConverters : Map<int, VertexConverters> }
-  let emptyCache = { vertexConverters = Map.empty }
+  type AtlasCache = { triConverters : Map<int, VertexConverters>; hexConverters : Map<int, HexVertexConverters> }
+  let emptyCache = { triConverters = Map.empty; hexConverters = Map.empty }
   type AtlasState<'V,'C> = { render : RenderMode; model : ModelState; callbacks : AtlasCallbacks<'V,'C>; renderCache : AtlasCache}

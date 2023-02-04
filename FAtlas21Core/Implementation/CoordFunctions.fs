@@ -21,7 +21,8 @@ module CoordFunctions =
   let scale c d = { x = c.x * d; y = c.y * d; z = c.z * d }
   let scale' d c = { x = c.x * d; y = c.y * d; z = c.z * d }
   let normalize c = c |> modulusSq |> System.Math.Sqrt |> fun f -> (1.0 / f) |> scale c 
-  let overNormalize o c = c |> modulusSq |> fun m -> m / o |> System.Math.Sqrt |> fun f -> (1.0 / f) |> scale c 
+  let overNormalize o c = c |> modulusSq |> fun m2 -> m2 / o |> System.Math.Sqrt |> fun f -> (1.0 / f) |> scale c 
+  let mid a b = { x = 0.5 * (a.x + b.x); y = 0.5 * (a.y + b.y); z = 0.5 * (a.z + b.z) }
 
   let cartFromSphereWithRadius r = cartFromSphere >> scale' r
 

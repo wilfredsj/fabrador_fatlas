@@ -10,7 +10,7 @@ open CoordFunctions
 
 module TriangleMeshFunctions =
 
-  let vertexConverters n = 
+  let triConverter n = 
     let nn1 = ((n + 1) * n) / 2
     let mutable i = -1
     let mutable j = 0
@@ -35,6 +35,129 @@ module TriangleMeshFunctions =
       |> Array.map(fun (i,j) -> (j,i))
       |> Map.ofArray
     { nplusOne = n; vertices2dTo1d = vertices2dTo1d; vertices1dTo2d = vertices1dTo2d }
+
+    
+  let hexConverter (triConverters : int -> VertexConverters) n = 
+    if n <= 1 then failwith <| sprintf "HexConverter only good for n >= 2, n input = %i" n
+    else
+      let triConv = triConverters (max (n-3) 1)
+      let nn1 = ((n + 1) * n) / 2
+      // Can group m into:
+      // A:    3 vertices (w 2 edges each) ,           m=6          k = 9
+      // B:    3*(n-2) edge vertices (w 4 edges each)  m=12n-24   , k = 15n-30
+      // C:    nn1 - (3*(n-1)) inner vertices w 6 edges each   
+      //                                               m=6nn1 - 18n + 18, 
+      //                                                            k = 7nn1 - 21n + 21
+      let kTotal = (7 * nn1 - (6 * n))
+
+      // n=1 => kTotal = 1 ... ?
+      // n=2 => kTotal = 21 - 12 = 9.... 3 corners * (2+1) edges
+      // n=3 => kTotal = 42 - 18 = 24 ... 9 + 3*(4+1)     
+      // n=4 => kTotal = 70 - 24 = 46 ... 9 + 6*5 + 1*(6+1)
+      // n=5 => kTotal = 105 -30 = 75 ... 9 + 9*5 + 3*7 
+
+      let kThresh2 = ((15* n) - 30) + 9
+      // n=1 => kThresh2 = -6
+      // n=2 => kThresh2 = 9
+      // n=3 => kThresh3 = 24
+      let verticesArray = 
+        Array.init kTotal (fun k ->
+          if k < 9 then
+            (k,
+              match k with
+              | 0 -> ((0,0),(0,0))
+              | 1 -> ((0,0),(1,0))
+              | 2 -> ((0,0),(0,1))
+              | 3 -> ((n-1,0),(n-1,0))
+              | 4 -> ((n-1,0),(n-2,1))
+              | 5 -> ((n-1,0),(n-2,0))
+              | 6 -> ((0,n-1),(0,n-1))
+              | 7 -> ((0,n-1),(0,n-2))
+              | 8 -> ((0,n-1),(1,n-2))
+              | _ -> failwith <| sprintf "Logic error k (%i) > 8" k)
+          elif k < kThresh2 then
+            let kRes = k - 9
+            let numPerEdge = (5 * n) - 10
+            let edgeNum = kRes / numPerEdge
+            let edgeEltNum = kRes % numPerEdge
+            let vertexNum = edgeEltNum / 5
+            let vertexDirNum = edgeEltNum % 5
+            let dirs = 
+              match edgeNum with
+              | 0 -> [| (1,0); (0,1); (-1, 1); (-1,0) |]
+              | 1 -> [| (-1, 1); (-1,0); (0,-1); (1, -1)|]
+              | 2 -> [|  (0,-1); (1, -1); (1,0); (0,1) |]
+              | _ -> failwith <| sprintf "Logic error edgenum (%i) > 3" edgeNum
+            let (base_i, base_j) =
+              match edgeNum with
+              | 0 -> (0,0)
+              | 1 -> (n-1,0)
+              | 2 -> (0,n-1)
+              | _ -> failwith <| sprintf "Logic error edgenum %i > 3" edgeNum
+            let (edge_di, edge_dj) = 
+              dirs.[0]
+            let (thisBase_i, thisBase_j)= (base_i + (vertexNum + 1) * edge_di, base_j + (vertexNum + 1) * edge_dj)
+            let (other_i, other_j) =
+              match vertexDirNum with
+              | 0 -> (thisBase_i, thisBase_j)
+              | _ -> (thisBase_i + fst dirs.[vertexDirNum-1], thisBase_j + snd dirs.[vertexDirNum-1])
+            (k,
+              ((thisBase_i, thisBase_j),
+               (other_i, other_j)))
+          else
+            let kRes = k - kThresh2
+            let numPerVertex = 7
+            let vertexNum = kRes / numPerVertex
+            let vertexDirNum = kRes % numPerVertex
+            // Claim is that n(n+1)/2 - 3*(n-1) = (n-3)*(n-2)/2
+            //               1/2 * n^2 - 5/2 n + 3  = 1/2 n^2 - 5/2 n + 3
+            //         .
+            //        . .
+            //       . * .
+            //      . * * .
+            //     . . . . . 
+
+            let (innerBase_i, innerBase_j) = triConv.vertices1dTo2d.[vertexNum]
+            // CAUTION:
+            let (thisBase_i, thisBase_j) = (innerBase_i + 1, innerBase_j + 1)
+          
+            let dirs = [| (1,0); (0,1); (-1, 1); (-1,0); (0,-1); (1, -1)|]
+          
+            let (other_i, other_j) =
+              match vertexDirNum with
+              | 0 -> (thisBase_i, thisBase_j)
+              | _ -> (thisBase_i + fst dirs.[vertexDirNum-1], thisBase_j + snd dirs.[vertexDirNum-1])
+            
+            (k,
+              ((thisBase_i, thisBase_j),
+                (other_i, other_j))))
+              
+      let vertices1dTo2dPhysical = verticesArray |> Map.ofArray
+    
+      let vertices1dTo2dLogical = 
+        verticesArray 
+        |> Array.map(fun (k,(ij1, _)) -> (k, ij1))
+        |> Map.ofArray
+
+      let vertices2dPhysicalTo1d =
+        verticesArray
+        |> Array.map(fun (i,j) -> (j,i))
+        |> Map.ofArray
+
+      
+      let dupeCheck =
+        verticesArray
+        |> Array.map(fun (i,j) -> (j,i))
+        |> Array.groupBy(fst)
+        |> Array.map(fun (i, arr) -> (i, Array.length arr, arr))
+        |> Array.filter(fun (i,l,a) -> l > 1)
+      { 
+        nplusOne = n; 
+        numEntries = Array.length verticesArray; 
+        vertices1dTo2dPhysical = vertices1dTo2dPhysical; 
+        vertices1dTo2dLogical = vertices1dTo2dLogical; 
+        vertices2dPhysicalTo1d = vertices2dPhysicalTo1d 
+      }
   
   
   let makeKeyAB (a:CoordinateKeys) (b:CoordinateKeys) =

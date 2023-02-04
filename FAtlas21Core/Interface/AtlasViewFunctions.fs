@@ -29,12 +29,21 @@ module AtlasViewFunctions =
     getNp1 ts.triangles.[0]
 
   let getVertexConverter cache np1 =
-    match Map.tryFind np1 cache.vertexConverters with
+    match Map.tryFind np1 cache.triConverters with
     | Some(vc) -> (vc, None)
     | None ->
-      let newElt = vertexConverters np1
-      let vcs' = Map.add np1 newElt cache.vertexConverters
-      (newElt, Some(vcs'))
+      let newElt = triConverter np1
+      let vcs' = Map.add np1 newElt cache.triConverters
+      (newElt, Some({ cache with triConverters = vcs'}))
+
+  let getHexConverter cache np1 =
+    match Map.tryFind np1 cache.hexConverters with
+    | Some hc -> (hc, None)
+    | None ->
+      let newElt = hexConverter triConverter np1
+      let vcs' = Map.add np1 newElt cache.hexConverters
+      (newElt, Some({ cache with hexConverters = vcs'}))
+
 
   // Typical use case is in a fold
   //    in which case renderCacheOverride is None on the first TriangleSet
@@ -44,13 +53,22 @@ module AtlasViewFunctions =
     // let colourer ij k = (0.6f,0.2f,0.5f) |> state.callbacks.makeColour 
     
     let cacheUsed = Option.defaultValue state.renderCache renderCacheOverride
-    let (converters, vertexMapOpt) = getVertexConverter cacheUsed (getNp1 t)
-    let rco' = 
-      match vertexMapOpt with
-      | Some(vm') -> { vertexConverters = vm' } |> Some
-                // vertexMapOpt will be None if getVertexConverter had a cache hit
-      | None -> Some cacheUsed
-    let abc = asArrays state.callbacks.makeVertex (toSimpleCart i) (colourer state.callbacks.makeColour i) converters ts.frame t
+    let (converters, updatedCacheOpt) = getVertexConverter cacheUsed (getNp1 t)
+    let rco' = Option.orElse (Some cacheUsed) updatedCacheOpt
+    let abc = asArrays state.callbacks.makeVertex (toSimpleCart i) (colourer state.callbacks.makeColour i) converters t
+    (abc, rco')
+
+  // Typical use case is in a fold
+  //    in which case renderCacheOverride is None on the first TriangleSet
+  //                                 and non-None on the subsequent ones
+  let drawIcosaFakeHexSection toSimpleCart colourer (state : AtlasState<'V,'C>) (ts : TriangleSet<'A>) renderCacheOverride (i,t) =
+        
+    // let colourer ij k = (0.6f,0.2f,0.5f) |> state.callbacks.makeColour 
+      
+    let cacheUsed = Option.defaultValue state.renderCache renderCacheOverride
+    let (converters, updatedCacheOpt) = getHexConverter cacheUsed (getNp1 t)
+    let rco' = Option.orElse (Some cacheUsed) updatedCacheOpt
+    let abc = triangleToArraysFakeHex state.callbacks.makeVertex (toSimpleCart i) (colourer state.callbacks.makeColour i) converters t
     (abc, rco')
 
   let drawAllIcosaSections iOpt rOpt colourer state ts =
@@ -80,6 +98,27 @@ module AtlasViewFunctions =
       | None -> tsi
     |> Array.mapFold (drawIcosaSection toSimpleCart colourer state ts) None
 
+    
+  let drawAllIcosaHexSectionsGeoMesh iOpt floored colourer state ts =
+    let toSimpleCart = 
+      if floored then 
+        fun i ij (logical : 'A) (physical_a: 'A) (physical_b : 'A) -> 
+          let targetModSq = max (logical.datum.r * logical.datum.r) 1.0
+          let physicalMid = mid (fakeCart physical_a.datum) (fakeCart physical_b.datum)
+          overNormalize targetModSq physicalMid          
+      else
+        fun i ij (logical : 'A) (physical_a: 'A) (physical_b : 'A) -> 
+          let targetModSq = logical.datum.r * logical.datum.r
+          let physicalMid = mid (fakeCart physical_a.datum) (fakeCart physical_b.datum)
+          overNormalize targetModSq physicalMid
+    ts.triangles 
+    |> Array.indexed
+    |> fun tsi ->
+      match iOpt with 
+      | Some i -> [| tsi.[i] |]
+      | None -> tsi
+    |> Array.mapFold (drawIcosaFakeHexSection toSimpleCart colourer state ts) None
+
   let solidViewIcosaSection rOpt iOpt colourer state ts =
     let (elts, newCache) = 
       drawAllIcosaSections iOpt rOpt colourer state ts
@@ -89,6 +128,12 @@ module AtlasViewFunctions =
   let solidViewGeoMesh iOpt floored colourer state ts =
     let (elts, newCache) = 
       drawAllIcosaSectionsGeoMesh iOpt floored colourer state ts
+    state.callbacks.onUpdateCallback [concat3 "Triangles" elts]
+    newCache 
+
+  let solidViewGeoHexMesh iOpt floored colourer state ts =
+    let (elts, newCache) = 
+      drawAllIcosaHexSectionsGeoMesh iOpt floored colourer state ts
     state.callbacks.onUpdateCallback [concat3 "Triangles" elts]
     newCache 
 
@@ -219,7 +264,7 @@ module AtlasViewFunctions =
     solidViewIcosaSection rOpt iOpt colours state (extractTriangleSet state.model)
 
     
-  let updateGeoMeshView iOpt floored cs state =
+  let updateGeoMeshView hex iOpt floored cs state =
     let colours = 
       colourerForFineGrid cs state
       |> function 
@@ -227,7 +272,10 @@ module AtlasViewFunctions =
          | None -> 
             colourerForCoarseGrid cs state
             |> maybeRescaleFunction (extractTriangleSet state.model) (extractFineTriangleSet state.model) 
-    solidViewGeoMesh iOpt floored colours state (extractGeoMesh state.model)
+    if hex then
+      solidViewGeoHexMesh iOpt floored colours state (extractGeoMesh state.model)
+    else
+      solidViewGeoMesh iOpt floored colours state (extractGeoMesh state.model)
         
   let updateClusterView cs state =
     let colours = 

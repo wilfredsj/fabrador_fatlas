@@ -37,7 +37,7 @@ module AtlasIO =
     | "qyy" ->                    InitGeoMesh true            |> ExactMatch
     | "z" ->  IcosaView GrayScale                    |> NewRenderMode |> ExactMatch
     | "xx" -> IcosaView (TectonicColours None)       |> NewRenderMode |> ExactMatch
-    | "sx" -> GeoMeshView (TectonicColours None, None, false)   |> NewRenderMode |> ExactMatch
+    | "sx" -> GeoMeshView (TectonicColours None, None, false, false)   |> NewRenderMode |> ExactMatch
     | ParseRegex "^x(\d+)x$" [clusterId] -> 
           IcosaView (TectonicColours (Some (System.Int32.Parse clusterId)))  
                                                     |> NewRenderMode |> ExactMatch
@@ -58,16 +58,18 @@ module AtlasIO =
       IcosaViewFiltered (TectonicLocalCoordColours None, System.Int32.Parse faceId)
                                                 |> NewRenderMode |> ExactMatch
     | "xv" -> IcosaView (TectonicStressColours None)  |> NewRenderMode |> ExactMatch
-    | "sv" -> GeoMeshView (TectonicStressColours None, None, false)  |> NewRenderMode |> ExactMatch
+    | "sv" -> GeoMeshView (TectonicStressColours None, None, false, false)  |> NewRenderMode |> ExactMatch
     | "xb1" -> IcosaView (TectonicHeightBiasColours (None, HB_Flat, HB_None))  |> NewRenderMode |> ExactMatch
     | "xb2" -> IcosaView (TectonicHeightBiasColours (None, HB_None, HB_Flat))  |> NewRenderMode |> ExactMatch
     | "xb3" -> IcosaView (TectonicHeightBiasColours (None, HB_Flat, HB_Flat))  |> NewRenderMode |> ExactMatch
     | "xb01" -> IcosaView (TectonicHeightBiasColours (None, HB_None, HB_Linear))  |> NewRenderMode |> ExactMatch
     | "xb02" -> IcosaView (TectonicHeightBiasColours (None, HB_None, HB_Stressed))  |> NewRenderMode |> ExactMatch
     | "xb4" -> IcosaView (TectonicHeightBias None)  |> NewRenderMode |> ExactMatch
-    | "sb4" -> GeoMeshView (TectonicHeightBias None, None, false)  |> NewRenderMode |> ExactMatch
-    | "sn1" -> GeoMeshView (HeightBestEffort true, None, false)  |> NewRenderMode |> ExactMatch
-    | "sn2" -> GeoMeshView (HeightBestEffort true, None, true)  |> NewRenderMode |> ExactMatch
+    | "sb4" -> GeoMeshView (TectonicHeightBias None, None, false, false)  |> NewRenderMode |> ExactMatch
+    | "sn1" -> GeoMeshView (HeightBestEffort true, None, false, false)  |> NewRenderMode |> ExactMatch
+    | "sn2" -> GeoMeshView (HeightBestEffort true, None, true, false)  |> NewRenderMode |> ExactMatch
+    | "sn3" -> GeoMeshView (HeightBestEffort true, None, false, true)  |> NewRenderMode |> ExactMatch
+    | "sn4" -> GeoMeshView (HeightBestEffort true, None, true, true)  |> NewRenderMode |> ExactMatch
     | "xn1" -> IcosaView (HeightBestEffort true)  |> NewRenderMode |> ExactMatch
     | "c" -> { colours = TectonicColours None; wireframeConnections = true } 
                              |> ClusterView |> NewRenderMode |> ExactMatch
