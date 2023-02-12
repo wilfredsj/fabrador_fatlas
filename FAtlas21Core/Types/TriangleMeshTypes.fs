@@ -184,9 +184,16 @@ module TriangleMeshTypes =
 
   type VertexConverters = { nplusOne : int; vertices1dTo2d : Map<int,int*int>; vertices2dTo1d : Map<int*int,int> }
 
-  type HexVertexConverters = { 
-    nplusOne : int;
+  type HexVertexConverters_BadDual = { 
+    nplusOne_bd : int;
     numEntries : int;
     vertices1dTo2dPhysical : Map<int,(int*int)*(int*int)>; 
     vertices1dTo2dLogical : Map<int,int*int>; 
     vertices2dPhysicalTo1d : Map<(int*int)*(int*int),int> }
+
+  type HexVertexConverters = { 
+    nplusOne : int;
+    numEntries : int;
+    vertices1dTo2dPhysical : Map<int,(int*int)*(int*int)*(int*int)>; 
+    vertices1dTo2dLogical : Map<int,int*int>; 
+    vertices2dPhysicalTo1d : Map<(int*int)*(int*int)*(int*int),int> }

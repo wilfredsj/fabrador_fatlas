@@ -34,10 +34,20 @@ module TriangleMeshToRender =
     let vertex = asCart (i,j) points.[i].[j]
     v3 (vertex.x |> float32, vertex.y |> float32, vertex.z |> float32)
 
-  let vertexMakerForHex v3 asCart vtx1d2dLogical vtx1d2dPhysical (points : 'A array array) k =
+  let vertexMakerForHex_bd v3 asCart vtx1d2dLogical vtx1d2dPhysical (points : 'A array array) k =
     let (l_i,l_j) = vtx1d2dLogical |> Map.find(k)
     let ((p1_i,p1_j),(p2_i, p2_j)) = vtx1d2dPhysical |> Map.find(k)
     let vertex = asCart (l_i,l_j) points.[l_i].[l_j] points.[p1_i].[p1_j] points.[p2_i].[p2_j]
+    v3 (vertex.x |> float32, vertex.y |> float32, vertex.z |> float32)
+
+  let vertexMakerForHex v3 asCart2 asCart3 vtx1d2dLogical vtx1d2dPhysical (points : 'A array array) k =
+    let (l_i,l_j) = vtx1d2dLogical |> Map.find(k)
+    let ((p1_i,p1_j),(p2_i, p2_j),(p3_i,p3_j)) = vtx1d2dPhysical |> Map.find(k)
+    let vertex = 
+      if p3_i >= 0 then
+        asCart3 (l_i,l_j) points.[l_i].[l_j] points.[p1_i].[p1_j] points.[p2_i].[p2_j] points.[p3_i].[p3_j] 
+      else
+        asCart2 (l_i,l_j) points.[l_i].[l_j] points.[p1_i].[p1_j] points.[p2_i].[p2_j] 
     v3 (vertex.x |> float32, vertex.y |> float32, vertex.z |> float32)
 
   let triangleToArrays v3 asCart colourer vertexConverters (triangle : SingleTriangle<'A>) = 
@@ -96,10 +106,10 @@ module TriangleMeshToRender =
   //         when included as part of a certain face or other one
   //         which in GL terms mean will be a seperate vertex in each instance
   
-  let triangleToArraysFakeHex v3 asCart colourer (hexConverter : HexVertexConverters) (triangle : SingleTriangle<'A>) = 
+  let triangleToArraysFakeHex_bd v3 asCart colourer (hexConverter : HexVertexConverters_BadDual) (triangle : SingleTriangle<'A>) = 
     let n = triangle.points.Length
     let myColourMaker = altColourMaker colourer hexConverter.vertices1dTo2dLogical triangle.points
-    let myVMaker = vertexMakerForHex v3 asCart hexConverter.vertices1dTo2dLogical hexConverter.vertices1dTo2dPhysical triangle.points
+    let myVMaker = vertexMakerForHex_bd v3 asCart hexConverter.vertices1dTo2dLogical hexConverter.vertices1dTo2dPhysical triangle.points
     let verticesIndices =
       [ 0 .. (n - 1) ]
       |> List.collect(fun i ->
@@ -158,3 +168,153 @@ module TriangleMeshToRender =
 
   let asArrays v3 asCart colourer vertexConverters triangle = 
     triangleToArrays v3 asCart colourer vertexConverters triangle
+
+  let triangleToArraysFakeHex v3 asCart2 asCart3 colourer (hexConverter : HexVertexConverters) (triangle : SingleTriangle<'A>) = 
+    let case_one =
+      //                  +j
+      //                 /   \ 
+      //                @     \ 
+      //               / \@    \
+      //              /    |    \
+      //            ij  ---@--- i+
+      [((0,0),(1,0),(-1,-1));
+        ((0,0),(1,0),(0,1));
+        ((0,0),(0,1),(-1,-1))]
+    let case_two i j =
+      //                  ij
+      //                 /   \ 
+      //                @     @ 
+      //               / \ @ / \
+      //              /         \
+      //            -j  ------- -+
+      [((i,j),(i-1,j+1),(-1,-1));
+        ((i,j),(i-1,j+1),(i-1,j));
+        ((i,j),(i-1,j),(-1,-1))]
+    let case_three i j =
+      //                  +-
+      //                 /   \ 
+      //                /     @ 
+      //               /   @ / \
+      //              /    |    \
+      //             i- ---@--- ij
+      [((i,j),(i,j-1),(-1,-1));
+        ((i,j),(i,j-1),(i+1,j-1));
+        ((i,j),(i+1,j-1),(-1,-1))]
+     
+    let case_four i j =
+      //                   +j
+      //                 /   \ 
+      //                @\    \ 
+      //               /   @   \
+      //              /    |    \
+      //            ij  ------- i+
+      //           /  \    |    /
+      //          /    \ /-@   /
+      //         @--@-/
+      //        /        \   /
+      //      -j   ----   -+
+      [((i,j),(i+1,j),(-1,-1));
+        ((i,j),(i+1,j),(i,j+1));
+        ((i,j),(i,j+1),(i-1,j+1));
+        ((i,j),(i-1,j+1),(i-1,j));
+        ((i,j),(i-1,j),(-1,-1))]
+    let case_five i j =
+      //       +-
+      //        \
+      //        /@
+      //      @/  \
+      //      |    \
+      //  i- ------ ij 
+      //      |    /  \
+      //      @ \ /    \
+      //         /\ @---@
+      //        /        \ 
+      //      -j   ----   -+
+      [((i,j),(i-1,j+1),(-1,-1));
+        ((i,j),(i-1,j+1),(i-1,j));
+        ((i,j),(i-1,j),(i,j-1));
+        ((i,j),(i,j-1),(i+1,j-1));
+        ((i,j),(i+1,j-1),(-1,-1))]
+    let case_six i j =
+      //      +- .......  +j
+      //     /  \        /   \ 
+      //    /    \ / @ \/     \ 
+      //   /   @/ \    / \@    \
+      //  /    |   \  /    |    \
+      // i- ---@-   ij  ---@--- i+
+
+      [((i,j),(i,j-1),(-1,-1));
+        ((i,j),(i,j-1),(i+1,j-1));
+        ((i,j),(i+1,j-1),(i+1,j));
+        ((i,j),(i+1,j),(i,j+1));
+        ((i,j),(i,j+1),(-1,-1))]
+    let case_seven i j =
+      //      +- .......  +j
+      //     /  \    3   /   \ 
+      //    /    \ / @ \/     \ 
+      //   /  2@/ \    / \ @4  \
+      //  /    |   \  /    |    \
+      // i- ---|-   ij  ------- i+
+      //  \    |   /  \    |    /
+      //   \  1@\ /    \  /@5  /
+      //    \    / \ @ /\     /
+      //     \  /    6   \   /
+      //      -j  ------  -+
+
+      [((i,j),(i-1,j),(i,j-1));
+        ((i,j),(i,j-1),(i+1,j-1));
+        ((i,j),(i+1,j-1),(i+1,j));
+        ((i,j),(i+1,j),(i,j+1));
+        ((i,j),(i,j+1),(i-1,j+1));
+        ((i,j),(i-1,j+1),(i-1,j))]
+
+    let n = triangle.points.Length
+    let myColourMaker = altColourMaker colourer hexConverter.vertices1dTo2dLogical triangle.points
+    let myVMaker = vertexMakerForHex v3 asCart2 asCart3 hexConverter.vertices1dTo2dLogical hexConverter.vertices1dTo2dPhysical triangle.points
+    let verticesIndices =
+      [ 0 .. (n - 1) ]
+      |> List.collect(fun i ->
+        [ 0 .. (n - (1 + i)) ]
+        |> List.collect(fun j ->
+          //   +- ...  +j
+          //  /  \ms2 /    \
+          // /ms2 \  / mf   \
+          //i- --- ij  ...  i+
+          // \ mb /  \ ms1 /
+          //  \  /ms1 \   /
+          //   -j ...  -+
+
+          //   2
+          //   
+          //   4   5
+          //     7
+          //   0   6    3
+          if (i+j) = (n-1) then
+            if i = 0 then
+              //case_two i j
+              case_three i j
+            elif j = 0 then
+              //case_three i j
+              case_two i j
+            else
+              case_five i j
+          else
+            if i = 0 then
+              if j = 0 then
+                case_one
+              else
+                //case_four i j
+                case_six i j
+            else
+              if j = 0 then
+                //case_six i j
+                case_four i j
+              else
+                case_seven i j
+          ))
+      |> List.map(fun pr -> hexConverter.vertices2dPhysicalTo1d |> Map.find(pr))
+
+    let vertices = Array.init hexConverter.numEntries myVMaker
+    let colours = Array.init hexConverter.numEntries myColourMaker
+    let vertexIndices = Array.ofList(verticesIndices)
+    (vertices, colours, vertexIndices)

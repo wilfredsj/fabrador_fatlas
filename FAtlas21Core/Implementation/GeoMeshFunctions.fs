@@ -99,3 +99,21 @@ module GeoMeshFunctions =
       geoParams = param;
       tectData = td
     }
+
+  let serialiseTps writer (gps : TectonicParams) = 
+    match gps with
+    | TP_Default tdp ->
+      writer <| sprintf "%.4f\t%b\t%.4f\t%.4f\t%.4f" tdp.heightBiasScale tdp.isVolMultiplicative tdp.volScale tdp.volOfVol tdp.dh_dh_correl
+      writer
+    | _ -> failwith "nyi"
+
+  let serializeGeoMesh writer (ts : TriangleSet<KeyedPoint<GeoMeshDatum>>) =
+    ts.triangles
+    writer
+
+  let serialiseGds writer gds =
+    let w' = serialiseTps writer gds.geoParams
+    let w'' = 
+      gds.triangleSet
+      |> Array.fold(fun w ts -> serializeGeoMesh w ts)
+    1

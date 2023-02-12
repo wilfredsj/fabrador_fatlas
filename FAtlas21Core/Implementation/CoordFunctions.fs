@@ -23,6 +23,7 @@ module CoordFunctions =
   let normalize c = c |> modulusSq |> System.Math.Sqrt |> fun f -> (1.0 / f) |> scale c 
   let overNormalize o c = c |> modulusSq |> fun m2 -> m2 / o |> System.Math.Sqrt |> fun f -> (1.0 / f) |> scale c 
   let mid a b = { x = 0.5 * (a.x + b.x); y = 0.5 * (a.y + b.y); z = 0.5 * (a.z + b.z) }
+  let mid3 a b c = { x = (a.x + b.x + a.x) / 3.0; y = (a.y + b.y + c.y) / 3.0; z = (a.z + b.z + c.z) / 3.0 }
 
   let cartFromSphereWithRadius r = cartFromSphere >> scale' r
 
