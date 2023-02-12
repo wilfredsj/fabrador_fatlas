@@ -52,6 +52,7 @@
   //       -58: Avoid DRY of Eye location / up in Euclidean gimbal-lock-avoid
   //       -59: Solve gimbal lock in Mercator case
   //       -57: Can IsoGrid make Hex/Pent-like display
+  //       -60: Fix Hex/Pent-like display tiling issues
 
 
   // TODO:
@@ -64,5 +65,5 @@
   //       -54: ID drainage basins
   //       -55: GeoMesh <-> file
   //       -56: Console I/O version  
-  //       -60: Fixed Hex/Pent-like display
+  //       -61: Fix Hex/Pent-like display logic issues - same logical face should have same colour/z from any triangle
 

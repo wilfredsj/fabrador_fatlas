@@ -70,6 +70,7 @@ module AtlasIO =
     | "sn2" -> GeoMeshView (HeightBestEffort true, None, true, false)  |> NewRenderMode |> ExactMatch
     | "sn3" -> GeoMeshView (HeightBestEffort true, None, false, true)  |> NewRenderMode |> ExactMatch
     | "sn4" -> GeoMeshView (HeightBestEffort true, None, true, true)  |> NewRenderMode |> ExactMatch
+    | ParseRegex "^snn(\d+)$" [faceId] -> GeoMeshView (HeightBestEffort true, Some (System.Int32.Parse faceId), true, true)  |> NewRenderMode |> PartialMatch
     | "xn1" -> IcosaView (HeightBestEffort true)  |> NewRenderMode |> ExactMatch
     | "c" -> { colours = TectonicColours None; wireframeConnections = true } 
                              |> ClusterView |> NewRenderMode |> ExactMatch

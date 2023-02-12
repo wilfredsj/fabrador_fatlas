@@ -135,7 +135,7 @@ module AtlasViewFunctions =
         fun i ij (logical : 'A) (physical_a: 'A) (physical_b : 'A) (physical_c : 'A) -> 
           let targetModSq = max (logical.datum.r * logical.datum.r) 1.0
           let physicalMid = mid3 (fakeCart physical_a.datum) (fakeCart physical_b.datum) (fakeCart physical_c.datum)
-          overNormalize targetModSq physicalMid          
+          overNormalize targetModSq physicalMid         
       else
         fun i ij (logical : 'A) (physical_a: 'A) (physical_b : 'A) (physical_c : 'A) -> 
           let targetModSq = logical.datum.r * logical.datum.r
