@@ -71,23 +71,31 @@ module GeoMeshFunctions =
     let triangleSet = td.cca.meshData
     let newTriangleSets = 
       triangleSet.triangles
-      |> Array.mapi (
-        fun t ts ->
+      |> Array.indexed
+      |> Array.mapFold (
+        fun cache (t,ts) ->
+          let mutable localCache = cache
           let newPoints = 
             ts.points
             |> Array.mapi(fun i arri ->
               arri
               |> Array.mapi(fun j elt ->
                 let url = { t = t; i = i; j = j} |> normalizeElement triangleSet
-                convertOnePoint rng param td (float ts.scale) url elt
+                if Map.containsKey elt.key localCache then
+                  Map.find elt.key localCache
+                else
+                  let newElt = convertOnePoint rng param td (float ts.scale) url elt
+                  localCache <- Map.add elt.key newElt localCache
+                  newElt
                 )
                 )
-          {
+          ({
             points = newPoints;
             keys = ts.keys;
             scale = ts.scale
-          }
-        )
+          }, localCache)
+        ) Map.empty
+      |> fst
     let gts = {
       triangles = newTriangleSets
       frame = triangleSet.frame

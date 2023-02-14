@@ -53,6 +53,7 @@
   //       -59: Solve gimbal lock in Mercator case
   //       -57: Can IsoGrid make Hex/Pent-like display
   //       -60: Fix Hex/Pent-like display tiling issues
+  //       -61: Fix Hex/Pent-like display logic issues - same logical face should have same colour/z from any triangle (issue with initial conversion from IsoGrid)
 
 
   // TODO:
@@ -65,5 +66,5 @@
   //       -54: ID drainage basins
   //       -55: GeoMesh <-> file
   //       -56: Console I/O version  
-  //       -61: Fix Hex/Pent-like display logic issues - same logical face should have same colour/z from any triangle
+  //                                                  
 
