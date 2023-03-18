@@ -8,6 +8,7 @@
     <None Include="Notes\PolygonLayerNotes.md" />
     <None Include="Notes\Notes.md" />
     <None Include="Notes\Todo.md" />
+    <Compile Include="Types\MathTypes.fs" />
     <Compile Include="Types\CoordTypes.fs" />
     <Compile Include="Types\ColourTypes.fs" />
     <Compile Include="Types\TriangleMeshTypes.fs" />
@@ -15,7 +16,9 @@
     <Compile Include="Types\TectonicTypes.fs" />
     <Compile Include="Types\TriangleTypes.fs" />
     <Compile Include="Types\GeoMeshTypes.fs" />
-    <Compile Include="Implementation\MathUtils.fs" />
+    <Compile Include="MathImplementation\Samples.fs" />
+    <Compile Include="MathImplementation\LinAlgUtils.fs" />
+    <Compile Include="MathImplementation\Distributions.fs" />
     <Compile Include="Implementation\CoordFunctions.fs" />
     <Compile Include="Implementation\TriangleMeshFunctions.fs" />
     <Compile Include="Implementation\TriangleLookupFunctions.fs" />

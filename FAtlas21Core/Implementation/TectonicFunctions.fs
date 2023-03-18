@@ -5,7 +5,8 @@ open TectonicTypes
 open TriangleMeshTypes
 open CoordFunctions
 open CoordTypes
-open MathUtils
+open Distributions
+
 
 module TectonicFunctions =
   let maker keys cart =
@@ -882,16 +883,16 @@ module TectonicFunctions =
         else abss
       tdp.volScale * (1.0 + s')
 
-  let sampleHeightVol (rng : System.Random) distanceScaleFactor param baseHeight baseVol =
+  let getSampler param (rng : System.Random) =
     match param with
     | TP_Default tdp ->
-      let volUsed = baseVol / distanceScaleFactor
-      let u = 2.0 * rng.NextDouble() - 1.0
-      let v = 2.0 * rng.NextDouble() - 1.0
-      // This is wrong, v' is no longer [-1,1]
-      // Easier solution is switch to sampling joint normal 
+      correlatedNormals rng tdp.dh_dh_correl 1.0 1.0
 
-      let (u',v') = correlate tdp.dh_dh_correl u v
+  let sampleHeightVol correlatedSampler distanceScaleFactor param baseHeight baseVol =
+    match param with
+    | TP_Default tdp ->
+      let volUsed = baseVol / distanceScaleFactor      
+      let (u', v') = correlatedSampler ()
       let h' =
         if tdp.isVolMultiplicative then
           baseHeight * (1.0 + u' * volUsed)

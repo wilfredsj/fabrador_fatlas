@@ -22,7 +22,7 @@ module GeoMeshFunctions =
   let actualCartFloored gmd =
     cartFromSphereWithRadius (max gmd.r 1.0) gmd.location
 
-  let convertOnePoint (rng : System.Random) param (td : TectonicData<'A>) scale url (point : KeyedPoint<Coordinate>) =
+  let convertOnePoint correlatedSampler param (td : TectonicData<'A>) scale url (point : KeyedPoint<Coordinate>) =
     let c =
       td.cca.clusterAssignments
       |> Map.find url
@@ -32,7 +32,7 @@ module GeoMeshFunctions =
     let baseHeight = heightBiasToHeight param bias
     let baseVol = stressToVol param stress
 
-    let (actualHeight, actualVol) = sampleHeightVol rng scale param baseHeight baseVol
+    let (actualHeight, actualVol) = sampleHeightVol correlatedSampler scale param baseHeight baseVol
 
     let p = {
       location = point.datum
@@ -45,12 +45,12 @@ module GeoMeshFunctions =
     }
     
     
-  let interpolateGMD rng param scaleInt a b newKey =
+  let interpolateGMD correlatedSampler param scaleInt a b newKey =
     let fscale = float scaleInt
     let midPoint = (fakeCart a.datum + (fakeCart b.datum)) * 0.5
     let baseHeight = (a.datum.r + b.datum.r) * 0.5
     let baseVol = (a.datum.rVol + b.datum.rVol) * 0.5
-    let (actualHeight, actualVol) = sampleHeightVol rng fscale param baseHeight baseVol
+    let (actualHeight, actualVol) = sampleHeightVol correlatedSampler fscale param baseHeight baseVol
     let p = {
       location = midPoint |> coordFromCart
       r = actualHeight
@@ -62,12 +62,14 @@ module GeoMeshFunctions =
     }
 
   let divideGeoMesh rng param (gds : GeoDivisionState<'A>) =
-    let ts' = divideTriangleSet (interpolateGMD rng param) gds.triangleSet
+    let correlatedSampler = getSampler param rng
+    let ts' = divideTriangleSet (interpolateGMD correlatedSampler param) gds.triangleSet
     {
       gds with triangleSet = ts'
     }
     
   let createGeoGridFromBase rng param (td : TectonicData<'A>) =
+    let correlatedSampler = getSampler param rng
     let triangleSet = td.cca.meshData
     let newTriangleSets = 
       triangleSet.triangles
@@ -84,7 +86,7 @@ module GeoMeshFunctions =
                 if Map.containsKey elt.key localCache then
                   Map.find elt.key localCache
                 else
-                  let newElt = convertOnePoint rng param td (float ts.scale) url elt
+                  let newElt = convertOnePoint correlatedSampler param td (float ts.scale) url elt
                   localCache <- Map.add elt.key newElt localCache
                   newElt
                 )

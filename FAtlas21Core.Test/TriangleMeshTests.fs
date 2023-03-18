@@ -54,7 +54,7 @@ let TestHubAdjacent_n4() =
   let problemCase = { t= 15; i = 0 ; j = 15}
   let N = 16
   
-  // Is this a contradition?
+  // Is this a contradiction?
   // Requesting neighbours of CE (15th element)
   // the 4th one, i=15;j=1 is canonically on a different triangle?
   // Maybe this is fine

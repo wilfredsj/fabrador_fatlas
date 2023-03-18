@@ -54,13 +54,13 @@
   //       -57: Can IsoGrid make Hex/Pent-like display
   //       -60: Fix Hex/Pent-like display tiling issues
   //       -61: Fix Hex/Pent-like display logic issues - same logical face should have same colour/z from any triangle (issue with initial conversion from IsoGrid)
+  //       -46: Change sampleHeightVol to use joint normal, at least in some settings
 
 
   // TODO:
   // AETHER
   //       -35: Some kind of legend for colour scale
   //       -45: Work out how to test / visualize hardcoded parameters
-  //       -46: Change sampleHeightVol to use joint normal, at least in some settings
   //       -52: Id Land masses
   //       -53: Id sea bodies
   //       -54: ID drainage basins

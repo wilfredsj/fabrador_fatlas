@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>net5.0</TargetFramework>
@@ -14,8 +14,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Compile Include="DistributionTests.fs" />
     <Compile Include="TriangleMeshTests.fs" />
     <Compile Include="TectonicTests.fs" />
+    <Compile Include="LinAlgTests.fs" />
     <Compile Include="Program.fs" />
   </ItemGroup>
 
