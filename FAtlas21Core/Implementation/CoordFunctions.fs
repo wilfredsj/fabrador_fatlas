@@ -9,6 +9,9 @@ module CoordFunctions =
 
   let cart x y z = { x = x; y = y; z = z}
 
+  let cartToString8f c = 
+    sprintf "%.8f\t%.8f\t%.8f" c.x c.y c.z
+
   let origin = cart 0.0 0.0 0.0
   let zrot cart c s =
     { x = cart.x * c + cart.y * s; y = cart.x * (-s) + cart.y * c; z = cart.z }

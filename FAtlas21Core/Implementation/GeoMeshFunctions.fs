@@ -117,13 +117,26 @@ module GeoMeshFunctions =
       writer
     | _ -> failwith "nyi"
 
-  let serializeGeoMesh writer (ts : TriangleSet<KeyedPoint<GeoMeshDatum>>) =
-    ts.triangles
+  let serializeGeoMeshPoint writer (gmd : KeyedPoint<GeoMeshDatum>) : string -> Unit =
+    writer <| sprintf "%s\t%.8f\t%.8f" (keyToString gmd.key) gmd.datum.r gmd.datum.rVol
     writer
+
+  let serializeSingleTriangle writer (ts : SingleTriangle<'A>) (serializePoint : (string -> Unit) -> 'A -> (string -> Unit)) : string -> Unit =
+    Array.fold(fun w row -> Array.fold(fun w' elt -> serializePoint w' elt) w row) writer ts.points
+
+  let serializeFrame writer (frame : TriangleFrame) : string -> unit =
+    writer <| sprintf "Frame,%i" frame.scaleFactor
+    frame.frameMap |> Map.fold(fun w k v -> 
+      w <| sprintf "%s\t%s" (string k) (cartToString8f v)
+      w) writer
+    
+
+  let serializeTriangleSet writer (ts : TriangleSet<KeyedPoint<GeoMeshDatum>>) pointFunction =
+    let writer' = ts.frame |> serializeFrame writer
+    ts.triangles |> Array.fold(fun w t -> serializeSingleTriangle w t pointFunction) writer'
 
   let serialiseGds writer gds =
     let w' = serialiseTps writer gds.geoParams
     let w'' = 
-      gds.triangleSet
-      |> Array.fold(fun w ts -> serializeGeoMesh w ts)
-    1
+      serializeTriangleSet w' gds.triangleSet serializeGeoMeshPoint
+    gds.tectData |> TectonicFunctions.serializeTectonicData w''

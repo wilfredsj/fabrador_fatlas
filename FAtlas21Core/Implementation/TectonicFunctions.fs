@@ -11,7 +11,20 @@ open Distributions
 module TectonicFunctions =
   let maker keys cart =
     { key = keys; datum = coordFromCart cart}
-    
+
+  let keyToString (key : (char*int) list) =
+    key
+    |> Array.ofList
+    |> Array.map(fun (c,i) -> sprintf "%s@%i," (string c) i)
+    |> System.String.Concat
+
+  let stringToKey (str : string) : (char*int) list =
+    str.Split([|','|])
+    |> Array.map(fun s -> 
+      match s.Split([|'@'|]) with
+      | [|chars; count|] -> (chars.[0], int count)
+      | _ -> failwith <| sprintf "Could not parse token '%s' in '%s'" s str)
+    |> List.ofArray    
     
   let printKeyWithPadding n point =
     let proto =
@@ -901,6 +914,17 @@ module TectonicFunctions =
       let v' =
         baseVol * (1.0 + v' * volUsed)
       (h', v')
+
+  let serializeClusterAssignment writer (cca : CompleteClusterAssignment<'A>) =
+    //let w' = writer <| cca.allClusters
+    //let w' = writer <| cca.connectedFaces
+    //let w' = writer <| cca.faceToCluster
+    //let w' = writer <| cca.clusterToFace
+    ()
+
+  let serializeTectonicData writer (td : TectonicData<'A>) = 
+    //let w' = td.cca <| serializeClusterAssignment writer
+    td.cca
           
 
         
