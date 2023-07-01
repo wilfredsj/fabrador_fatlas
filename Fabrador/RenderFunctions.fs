@@ -143,6 +143,13 @@ let compileShaders (spd : ShaderProgramData) (defaultUniforms : (string*SomeKind
 
   let shaderError = GL.GetProgramInfoLog(shaderProgramHandle)
 
+  if vsError <> "" then
+    printfn "Xyzzy Vertex Shader Error: %s" vsError
+  if fsError <> "" then
+    printfn "Xyzzy Fragment Shader Error: %s" fsError
+  if shaderError <> "" then
+    printfn "Xyzzy Shader Program Error: %s" shaderError
+
   { details = spd; handle = shaderProgramHandle ; 
     vsError = vsError; fsError = fsError; shaderError = shaderError; 
     defaultUniforms = defaultUniforms
