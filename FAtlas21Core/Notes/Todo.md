@@ -55,6 +55,8 @@
   //       -60: Fix Hex/Pent-like display tiling issues
   //       -61: Fix Hex/Pent-like display logic issues - same logical face should have same colour/z from any triangle (issue with initial conversion from IsoGrid)
   //       -46: Change sampleHeightVol to use joint normal, at least in some settings
+  //       -56: Console I/O version  
+  //       -62: Console histograms of e.g. heightbias     
 
 
   // TODO:
@@ -64,7 +66,6 @@
   //       -52: Id Land masses
   //       -53: Id sea bodies
   //       -54: ID drainage basins
-  //       -55: GeoMesh <-> file
-  //       -56: Console I/O version  
-  //                                                  
-
+  //       -55: GeoMesh <-> file            
+  //       -63: Console histograms of geomesh feature
+  //       -64: Console histograms of land mass / sea bodies

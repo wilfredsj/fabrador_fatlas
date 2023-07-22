@@ -24,6 +24,45 @@ module AtlasIO =
      then Some (List.tail [ for x in m.Groups -> x.Value ])
      else None
 
+
+  let parseConsoleAction str = 
+    match str with
+    | "print" | "info" -> Some Print
+    | "stats" -> Some Stats
+    | _ -> None
+
+  let parseConsoleTarget str = 
+   match str with
+    | "state" -> Some State
+    | "tectonics" | "tec" | "tect" -> Some Tectonics
+    | "geo" | "geomesh" -> Some GeoMesh
+    | "cluster" | "clu" -> Some Cluster
+    | _ -> None
+
+  let parseConsoleCommand (str : string) =
+    // Split on spaces
+    let split = 
+      str.Split([|' '|]) 
+      |> Array.toList 
+      |> List.filter (fun x -> x <> "")
+      |> List.map (fun x -> x.ToLower())
+    let parsedCommand = 
+      match split with
+      | [] -> None
+      | [action] -> parseConsoleAction action |> Option.map (fun a -> consoleCommand a None [])
+      | [action; target] -> 
+        match parseConsoleAction action, parseConsoleTarget target with
+        | Some action, tOpt -> Some (consoleCommand action tOpt [])
+        | _ -> None
+      | action::targetStr::args -> 
+        match parseConsoleAction action, parseConsoleTarget targetStr with
+        | Some action, Some target -> Some (consoleCommand action (Some target) args)
+        | Some action, None -> Some (consoleCommand action None (targetStr :: args))
+        | _ -> None
+    match parsedCommand with
+    | Some cmd -> ConsoleCommand cmd
+    | None -> UnknownCommand str
+
   let partialMessage str =
     match str with
     | ParseRegex "^q(\d+)$" [newSeed] -> ReSeed (System.Int32.Parse newSeed) |> PartialMatch
@@ -98,6 +137,7 @@ module AtlasIO =
     | "ax" ->    Rotate_Stop |> ForceRotate |> UIInstruction |> ExactMatch
     | "[" ->                 ForceEuclidian |> UIInstruction |> ExactMatch
     | "]" ->                 ForceMercator  |> UIInstruction |> ExactMatch 
+    | ParseRegex "^[.](.+)" [commandStr] -> commandStr |> parseConsoleCommand |> PartialMatch
     | _ -> NoMatch
 
   let forceMessage m =

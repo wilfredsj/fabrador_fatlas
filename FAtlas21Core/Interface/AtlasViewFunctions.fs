@@ -200,46 +200,76 @@ module AtlasViewFunctions =
 
     state.callbacks.onUpdateCallback allElts
     newCache 
-
+    
+  
+  let tryExtractTriangleSet s = 
+    match s with
+    | IcosaDivision t -> Some t
+    | ClusterAssignment (cas, vc) -> Some cas.meshData
+    | ClusterFinished cf -> Some cf.meshData
+    | TectonicAssigned tec -> Some tec.cca.meshData
+    | GeoDivision gds -> Some gds.tectData.cca.meshData
+    | _ -> None
   
   let extractTriangleSet s = 
-    match s with
-    | IcosaDivision t -> t
-    | ClusterAssignment (cas, vc) -> cas.meshData
-    | ClusterFinished cf -> cf.meshData
-    | TectonicAssigned tec -> tec.cca.meshData
-    | GeoDivision gds -> gds.tectData.cca.meshData
+    match tryExtractTriangleSet s with
+    | Some t -> t
     | _ -> failwith <| sprintf "No triangles set for %A" s
 
-  let extractFineTriangleSet s = 
+  let tryExtractFineTriangleSet s = 
     match s with
-    | GeoDivision gds -> gds.triangleSet
+    | GeoDivision gds -> Some gds.triangleSet
+    | _ -> None
+
+  let extractFineTriangleSet s = 
+    match tryExtractFineTriangleSet s with
+    | Some s -> s
     | _ -> failwith <| sprintf "No fine triangles set for %A" s
+
+  let tryExtractClusterData s =
+    match s with
+    | ClusterAssignment (cas,_) -> renderCAS cas |> Some
+    | ClusterFinished cf -> renderCCS cf |> Some
+    | TectonicAssigned tec -> tec.cca |> renderCCS |> Some
+    | GeoDivision gds -> gds.tectData.cca |> renderCCS |> Some
+    | _ -> None
     
   let extractClusterData s =
-    match s with
-    | ClusterAssignment (cas,_) -> renderCAS cas
-    | ClusterFinished cf -> renderCCS cf
-    | TectonicAssigned tec -> tec.cca |> renderCCS
-    | GeoDivision gds -> gds.tectData.cca |> renderCCS
-    | _ -> failwith <| sprintf "No cluster data for %A" s
-        
-  let extractCompleteClusterData s =
-    match s with
-    | ClusterFinished cf -> cf
-    | TectonicAssigned td -> td.cca
-    | GeoDivision gds -> gds.tectData.cca
+    match tryExtractClusterData s with
+    | Some cs -> cs
     | _ -> failwith <| sprintf "No cluster data for %A" s
 
-  let extractTectonicData s =
+  let tryExtractCompleteClusterData s =
     match s with
-    | TectonicAssigned td -> td
-    | GeoDivision gds -> gds.tectData
+    | ClusterFinished cf -> Some cf
+    | TectonicAssigned td -> Some td.cca
+    | GeoDivision gds -> Some gds.tectData.cca
+    | _ -> None
+        
+  let extractCompleteClusterData s =
+    match tryExtractCompleteClusterData s with
+    | Some c -> c
+    | _ -> failwith <| sprintf "No cluster data for %A" s
+
+  let tryExtractTectonicData s =
+    match s with
+    | TectonicAssigned td -> Some td
+    | GeoDivision gds -> Some gds.tectData
+    | _ -> None
+
+  let extractTectonicData s =
+    match tryExtractTectonicData s with
+    | Some td -> td
     | _ -> failwith <| sprintf "No tectonic data for %A" s
+
+  let tryExtractGeoMesh s =
+    match s with
+    | GeoDivision gds -> Some gds
+    | _ -> None
     
   let extractGeoMesh s = 
-    match s with
-    | GeoDivision gds -> gds.triangleSet
+    match tryExtractGeoMesh s with
+    | Some gds -> gds
     | _ -> failwith <| sprintf "No GeoMesh set for %A" s
 
   let colourerForCoarseGrid cs state =
@@ -303,9 +333,9 @@ module AtlasViewFunctions =
             colourerForCoarseGrid cs state
             |> maybeRescaleFunction (extractTriangleSet state.model) (extractFineTriangleSet state.model) 
     if hex then
-      solidViewGeoHexMesh iOpt floored colours state (extractGeoMesh state.model)
+      solidViewGeoHexMesh iOpt floored colours state (extractFineTriangleSet state.model)
     else
-      solidViewGeoMesh iOpt floored colours state (extractGeoMesh state.model)
+      solidViewGeoMesh iOpt floored colours state (extractFineTriangleSet state.model)
         
   let updateClusterView cs state =
     let colours = 

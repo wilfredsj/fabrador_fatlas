@@ -32,8 +32,10 @@
     <Compile Include="View\TectonicViewFunctions.fs" />
     <Compile Include="View\GeoMeshViewFunctions.fs" />
     <Compile Include="View\ViewHelperFunctions.fs" />
+    <Compile Include="Console\ConsoleFunctions.fs" />
     <Compile Include="Interface\AtlasStateTypes.fs" />
     <Compile Include="Interface\AtlasViewFunctions.fs" />
+    <Compile Include="Interface\AtlasConsoleView.fs" />
     <Compile Include="Interface\AtlasIO.fs" />
     <Compile Include="Interface\AtlasState.fs" />
   </ItemGroup>

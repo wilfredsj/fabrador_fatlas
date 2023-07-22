@@ -9,6 +9,7 @@ open GeoMeshFunctions
 open AtlasIO
 open AtlasStateTypes
 open AtlasViewFunctions
+open AtlasConsoleView
 
 module Interface =
   let mutable rng = System.Random(1338)
@@ -170,6 +171,8 @@ module Interface =
       |> maybeUpdateCacheState ns
     else
       match message with
+      | ConsoleCommand message ->
+        processConsoleCommand (printfn "%s") state message
       | ReSeed newSeed ->
         printfn "Random Seed changed to %i" newSeed
         rng <- System.Random(newSeed)

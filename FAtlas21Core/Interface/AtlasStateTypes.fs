@@ -58,12 +58,35 @@ module AtlasStateTypes =
   | ForceMercator
   | ForceRotate of RenderRotationAction
 
+  type ConsoleAction =
+  | Print
+  | Stats
+
+  type ConsoleTarget = 
+  | State
+  | GeoMesh
+  | Tectonics
+  | Cluster
+
+  let defaultTarget action =
+    match action with
+    | Print -> State
+    | Stats -> State
+
+  type ConsoleCommandTyped = 
+    { action : ConsoleAction; target : ConsoleTarget; args : string list }
+
+  let consoleCommand a tOpt args = 
+    { action = a; target = tOpt |> Option.defaultValue (defaultTarget a); args = args }
+
   type Message =
   | NoOp
   | Restart
   | ReSeed of int
   | Divide of int
   | NewRenderMode of RenderMode
+  | ConsoleCommand of ConsoleCommandTyped
+  | UnknownCommand of string
   | UIInstruction of UIAction
   | ClusterInit of int option
   | ClusterIterate of int

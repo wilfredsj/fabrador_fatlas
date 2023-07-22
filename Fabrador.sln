@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 16
-VisualStudioVersion = 16.0.30907.101
+# Visual Studio Version 17
+VisualStudioVersion = 17.6.33815.320
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "Fabrador", "Fabrador\Fabrador.fsproj", "{95464409-116A-422B-BAE1-2D1D5AB7F1A0}"
 EndProject
@@ -9,7 +9,9 @@ Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "FAtlas21Core", "FAtlas21Cor
 EndProject
 Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "FAtlas21Core.Test", "FAtlas21Core.Test\FAtlas21Core.Test.fsproj", "{E943D5C0-1F3D-4934-931C-C669228129F8}"
 EndProject
-Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "FAtlas21UiExec", "FAtlas21UiExec\FAtlas21UiExec.fsproj", "{010C3323-8D8E-46B9-AA58-EB094760EA94}"
+Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "FAtlas21UiExec", "FAtlas21UiExec\FAtlas21UiExec.fsproj", "{010C3323-8D8E-46B9-AA58-EB094760EA94}"
+EndProject
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "FAtlasConsole", "FabradorConsole\FAtlasConsole.fsproj", "{8563984B-95EB-4F0F-A0EB-851DDFB62903}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -33,6 +35,10 @@ Global
 		{010C3323-8D8E-46B9-AA58-EB094760EA94}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{010C3323-8D8E-46B9-AA58-EB094760EA94}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{010C3323-8D8E-46B9-AA58-EB094760EA94}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8563984B-95EB-4F0F-A0EB-851DDFB62903}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8563984B-95EB-4F0F-A0EB-851DDFB62903}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8563984B-95EB-4F0F-A0EB-851DDFB62903}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8563984B-95EB-4F0F-A0EB-851DDFB62903}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
