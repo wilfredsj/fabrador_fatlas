@@ -908,4 +908,34 @@ module TriangleMeshFunctions =
     let t = ts.triangles.[url.t]
     let p = t.points.[url.i].[url.j]
     p.key
-          
+
+  let getAllPointsWithDuplicates (ts : TriangleSet<'A>) =
+    ts.triangles
+    |> List.ofArray
+    |> List.collect(fun t -> t.points |> List.ofArray |> List.collect(List.ofArray))
+   
+  let getAllPointsOnce (ts : TriangleSet<'A>) =
+    ts.triangles
+    |> Array.indexed
+    |> List.ofArray
+    |> List.collect(fun (ti,t) -> 
+      let np1 = Array.length t.points
+      t.points
+      |> Array.indexed
+      |> List.ofArray
+      |> List.collect(fun (i,arr) ->
+        arr 
+        |> Array.indexed
+        |> List.ofArray
+        |> List.filter(fun (j, pt) ->
+          let isEdge =
+            i = 0 || j = 0 || (i+j) = (np1-1)
+          if isEdge then 
+            let url = { i = i; j=j; t=ti }
+            url = normalizeElement ts url
+          else
+            true
+        )
+        |> List.map snd
+      ))
+    

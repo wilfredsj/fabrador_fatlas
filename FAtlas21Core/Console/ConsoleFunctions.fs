@@ -4,8 +4,52 @@ open TriangleMeshTypes
 open CoordTypes
 open TectonicTypes
 open GeoMeshTypes
+open TriangleMeshFunctions
+open UtilTypes
 
 module ConsoleFunctions =
+
+  let floatToAnsiEscapeColour (f' : float) =
+    //assume f between 0 and 1
+    let f = min 1.0 <| max 0.0 f'
+    let r = 5
+    let g = 0
+    let b = int (f * 5.0)
+    let colour = 16 + b + 6 * g + 36 * r
+    sprintf "\x1b[38;5;%im" colour
+
+  let resetAnsiEscapeColour =
+    "\x1b[0m"
+
+  let floatToAsciiChar (f : float) =
+    // heavier character for higher values
+    let chars = [|'.'; ':'; '-'; '='; '+'; '*'; '#'; '%'; '@'|]
+    let nChars = chars.Length
+    let f' = int <| f * float nChars
+    if f' < 0 then
+      chars.[0] |> string
+    elif f' >= nChars then
+      chars.[nChars - 1] |> string
+    else
+      chars.[f'] |> string
+
+  let printTriangle printer (f : 'A -> float) (triangle : SingleTriangle<'A>) =
+    let np1 = triangle.points.[0].Length
+    [0..np1-1]
+    |> List.iter(fun row ->
+      let mainStr = 
+        [|0..row|]
+        |> Array.collect(fun col ->
+          let i = row-col
+          let j = col
+          let v = f triangle.points.[i].[j]
+          [| floatToAnsiEscapeColour v; floatToAsciiChar v; floatToAnsiEscapeColour 1.0; " " |]
+          //[| floatToAsciiChar v; ' ' |]
+        )
+      let frontPadding = String.replicate (np1 - row - 1) " "
+      printer <| sprintf "%s%s%s" frontPadding (System.String.Concat mainStr) frontPadding)
+    printer resetAnsiEscapeColour
+ 
   let printIcosa printer (id : TriangleSet<KeyedPoint<Coordinate>>) =
     printer <| sprintf "IcosaDivision Scale=%i" id.triangles.[0].points.Length
 
@@ -18,8 +62,20 @@ module ConsoleFunctions =
   let printTectonicAssigned printer (tec : TectonicData<(char*int) list>) =
     printer <| sprintf "TectonicAssigned #Plates=%i" tec.plates.Length
 
+  let geoHeightDetails printer args gds =
+    let tOpt = 
+      args 
+      |> List.tryPick(fun s -> 
+        match s with
+        | ParseRegex "t=([0-9]+)" [t] -> 
+          let t' = int t
+          Some(t')
+        | _ -> None)
+    let t = Option.defaultValue 0 tOpt
+    printTriangle printer (fun p -> 4.0*(p.datum.r-1.0)) gds.triangleSet.triangles.[t]
+
   let printGeoDivision printer (gds : GeoDivisionState<(char*int) list>) =
-    printer <| sprintf "GeoDivision Scale=%i" gds.triangleSet.triangles.[0].points.Length
+     printer <| sprintf "GeoDivision Scale=%i" gds.triangleSet.triangles.[0].points.Length
 
   let getMeanAndStDev values = 
     let mean = values |> Array.average
@@ -116,3 +172,12 @@ module ConsoleFunctions =
     let (mean, stdDev) = getMeanAndStDev allClusterSizes
     printer <| sprintf "ClusterSize mean=%.4f stdDev=%.4f, n=%i" mean stdDev allClusterSizes.Length
     printHistogramFloat printer 10 allClusterSizes
+
+  let geoHeightStats printer (ts : TriangleSet<KeyedPoint<GeoMeshDatum>>) = 
+    let allPoints = getAllPointsOnce ts
+    let allPointsBad = getAllPointsWithDuplicates ts
+    let allHeights = allPoints |> List.map(fun p -> p.datum.r) |> Array.ofList
+    let (mean, stdDev) = getMeanAndStDev allHeights
+    printer <| sprintf "Num vertices=%i (before de-duplication=%i)" allPoints.Length allPointsBad.Length
+    printer <| sprintf "Height mean=%.4f stdDev=%.4f, n=%i" mean stdDev allHeights.Length
+    printHistogramFloat printer 20 allHeights

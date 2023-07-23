@@ -57,6 +57,8 @@
   //       -46: Change sampleHeightVol to use joint normal, at least in some settings
   //       -56: Console I/O version  
   //       -62: Console histograms of e.g. heightbias     
+  //       -65: Console Triangle plot
+  //       -66: Console Triangle plot has colours
 
 
   // TODO:
@@ -69,3 +71,4 @@
   //       -55: GeoMesh <-> file            
   //       -63: Console histograms of geomesh feature
   //       -64: Console histograms of land mass / sea bodies
+  //       -67: Console Triangle plot has legend

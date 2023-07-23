@@ -16,6 +16,7 @@
     <Compile Include="Types\TectonicTypes.fs" />
     <Compile Include="Types\TriangleTypes.fs" />
     <Compile Include="Types\GeoMeshTypes.fs" />
+    <Compile Include="Types\UtilTypes.fs" />
     <Compile Include="MathImplementation\Samples.fs" />
     <Compile Include="MathImplementation\LinAlgUtils.fs" />
     <Compile Include="MathImplementation\Distributions.fs" />

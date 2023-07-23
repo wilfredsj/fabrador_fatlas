@@ -48,12 +48,27 @@ module AtlasConsoleView =
       match tryExtractCompleteClusterData state.model with
       | Some cs -> clusterStats printer cs
       | None -> printer "No Cluster"
+    | GeoMesh ->
+      match tryExtractGeoMesh state.model with
+      | Some gds -> geoHeightStats printer gds.triangleSet
+      | None -> printer "No GeoMesh"
     | _ ->
       printer "Stats not supported for this target"
+    state
+
+  let consoleDetails printer state (cc : ConsoleCommandTyped) = 
+    match cc.target with
+    | GeoMesh ->
+      match tryExtractGeoMesh state.model with
+      | Some gds -> geoHeightDetails printer cc.args gds
+      | None -> printer "No GeoMesh"
+    | _ ->
+      printer "Details not supported for this target"
     state
       
   let processConsoleCommand printer state (cc : ConsoleCommandTyped) = 
     match cc.action with
     | Print -> consolePrint printer state cc
     | Stats -> consoleStats printer state cc
+    | Details -> consoleDetails printer state cc
 

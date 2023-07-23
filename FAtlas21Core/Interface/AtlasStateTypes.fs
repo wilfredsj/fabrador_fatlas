@@ -61,6 +61,7 @@ module AtlasStateTypes =
   type ConsoleAction =
   | Print
   | Stats
+  | Details
 
   type ConsoleTarget = 
   | State
@@ -72,6 +73,7 @@ module AtlasStateTypes =
     match action with
     | Print -> State
     | Stats -> State
+    | Details -> GeoMesh
 
   type ConsoleCommandTyped = 
     { action : ConsoleAction; target : ConsoleTarget; args : string list }
