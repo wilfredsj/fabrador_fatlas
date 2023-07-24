@@ -9,17 +9,34 @@ open UtilTypes
 
 module ConsoleFunctions =
 
-  let floatToAnsiEscapeColour (f' : float) =
-    //assume f between 0 and 1
-    let f = min 1.0 <| max 0.0 f'
-    let r = 5
-    let g = 0
-    let b = int (f * 5.0)
-    let colour = 16 + b + 6 * g + 36 * r
-    sprintf "\x1b[38;5;%im" colour
+  type LegendRow<'A> = {
+    value : 'A; 
+    actualText : string;
+    unescapedText : string
+  }
 
   let resetAnsiEscapeColour =
     "\x1b[0m"
+
+  let keyValuesForLegend =
+    [0.0; 0.1; 0.2; 0.3; 0.4; 0.5; 0.6; 0.7; 0.8; 0.9; 1.0]
+
+  let getLegendKeyValues (escaper : float -> string) (charer : float -> string) keyValues =
+    keyValues 
+    |> List.map(fun v -> 
+      let actualText = sprintf "%s| %-3f : %s%s|" resetAnsiEscapeColour v (String.concat "" [| escaper v; charer v |]) resetAnsiEscapeColour
+      let unescapedText = sprintf "| %-3f : %s|" v (String.concat "" [| charer v |])
+      { value = v; actualText = actualText; unescapedText = unescapedText })
+
+  let floatToAnsiEscapeColour (f' : float) =
+    //assume f between 0 and 1
+    let f = min 1.0 <| max 0.0 f'
+    let r = 5 - int (f * 5.0)
+    let g = int (f * 5.0)
+    let b = 0
+    let colour = 16 + b + 6 * g + 36 * r
+    sprintf "\x1b[38;5;%im" colour
+
 
   let floatToAsciiChar (f : float) =
     // heavier character for higher values
@@ -34,6 +51,9 @@ module ConsoleFunctions =
       chars.[f'] |> string
 
   let printTriangle printer (f : 'A -> float) (triangle : SingleTriangle<'A>) =
+    let legend = 
+      getLegendKeyValues floatToAnsiEscapeColour floatToAsciiChar keyValuesForLegend
+      |> Array.ofList
     let np1 = triangle.points.[0].Length
     [0..np1-1]
     |> List.iter(fun row ->
@@ -46,8 +66,21 @@ module ConsoleFunctions =
           [| floatToAnsiEscapeColour v; floatToAsciiChar v; floatToAnsiEscapeColour 1.0; " " |]
           //[| floatToAsciiChar v; ' ' |]
         )
-      let frontPadding = String.replicate (np1 - row - 1) " "
-      printer <| sprintf "%s%s%s" frontPadding (System.String.Concat mainStr) frontPadding)
+      let thisLegend = 
+        if row < legend.Length then
+          Some legend.[row]
+        else
+          None
+
+      let thisLegendLength = thisLegend |> Option.map(fun x -> x.unescapedText.Length) |> Option.defaultValue 0
+      let thisLegendText = thisLegend |> Option.map(fun x -> x.actualText) |> Option.defaultValue ""
+      let paddingLength = np1 - row - 1 - thisLegendLength
+      let frontPadding = 
+        if paddingLength > 0 then
+          String.replicate paddingLength " "
+        else ""
+      let backPadding = String.replicate (np1 - row - 1) " "
+      printer <| sprintf "%s%s%s%s" thisLegendText frontPadding (System.String.Concat mainStr) backPadding)
     printer resetAnsiEscapeColour
  
   let printIcosa printer (id : TriangleSet<KeyedPoint<Coordinate>>) =
