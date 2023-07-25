@@ -60,6 +60,7 @@
   //       -65: Console Triangle plot
   //       -66: Console Triangle plot has colours
   //       -67: Console Triangle plot has legend
+  //       -68: Fix legend padding in triangle plot
 
 
   // TODO:

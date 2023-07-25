@@ -24,8 +24,8 @@ module ConsoleFunctions =
   let getLegendKeyValues (escaper : float -> string) (charer : float -> string) keyValues =
     keyValues 
     |> List.map(fun v -> 
-      let actualText = sprintf "%s| %-3f : %s%s|" resetAnsiEscapeColour v (String.concat "" [| escaper v; charer v |]) resetAnsiEscapeColour
-      let unescapedText = sprintf "| %-3f : %s|" v (String.concat "" [| charer v |])
+      let actualText = sprintf "%s| %-3f : %s%s |" resetAnsiEscapeColour v (String.concat "" [| escaper v; charer v |]) resetAnsiEscapeColour
+      let unescapedText = sprintf "| %-3f : %s |" v (String.concat "" [| charer v |])
       { value = v; actualText = actualText; unescapedText = unescapedText })
 
   let floatToAnsiEscapeColour (f' : float) =
@@ -55,6 +55,15 @@ module ConsoleFunctions =
       getLegendKeyValues floatToAnsiEscapeColour floatToAsciiChar keyValuesForLegend
       |> Array.ofList
     let np1 = triangle.points.[0].Length
+    let extraPadding =
+      if legend |> Array.isEmpty then
+        0
+      else      
+        let lastLegendLength = legend.[legend.Length - 1].unescapedText.Length
+        if lastLegendLength > (np1 - legend.Length)then
+          lastLegendLength - (np1 - legend.Length)
+        else
+          0
     [0..np1-1]
     |> List.iter(fun row ->
       let mainStr = 
@@ -74,7 +83,7 @@ module ConsoleFunctions =
 
       let thisLegendLength = thisLegend |> Option.map(fun x -> x.unescapedText.Length) |> Option.defaultValue 0
       let thisLegendText = thisLegend |> Option.map(fun x -> x.actualText) |> Option.defaultValue ""
-      let paddingLength = np1 - row - 1 - thisLegendLength
+      let paddingLength = extraPadding + np1 - row - 1 - thisLegendLength
       let frontPadding = 
         if paddingLength > 0 then
           String.replicate paddingLength " "

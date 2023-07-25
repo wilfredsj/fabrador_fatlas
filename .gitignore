@@ -4,7 +4,9 @@ FAtlas21UiExec/obj/
 FAtlas21UiExec/bin/
 FAtlas21Core.Test/bin/
 FAtlas21Core.Test/obj/
-Fabrador/bin/
 Fabrador/obj/
+Fabrador/bin/
+FabradorConsole/obj/
+FabradorConsole/bin/
 .vs/
 Fabrador.sln
