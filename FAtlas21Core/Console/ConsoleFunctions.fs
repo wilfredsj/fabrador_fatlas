@@ -48,6 +48,16 @@ module ConsoleFunctions =
     else
       "?"
 
+  let intOptToAsciiChar (iOpt : int option) = 
+    match iOpt with
+    | Some i -> intToAsciiChar i
+    | None -> "?"
+
+  let intOptRedIfMissing (iOpt : int option) = 
+    match iOpt with
+    | Some i -> ""
+    | None -> "\x1b[31m"
+
   let floatToAsciiChar (f : float) =
     // heavier character for higher values
     let chars = [|'.'; ':'; '-'; '='; '+'; '*'; '#'; '%'; '@'|]
@@ -60,15 +70,15 @@ module ConsoleFunctions =
     else
       chars.[f'] |> string
 
-  let printTriangleInt printer (f : 'A -> int) (triangle : SingleTriangle<'A>) =
-    let legend = [||]
+      
+  let printTriangle printer (f : 'A -> 'B) (mainPrinter : 'B -> string) (fancyPrinterOpt : ('B -> string) option) (legend : LegendRow<'B> array) (triangle : SingleTriangle<'A>) =
     let np1 = triangle.points.[0].Length
     let extraPadding =
       if legend |> Array.isEmpty then
         0
       else      
         let lastLegendLength = legend.[legend.Length - 1].unescapedText.Length
-        if lastLegendLength > (np1 - legend.Length)then
+        if lastLegendLength > (np1 - legend.Length) then
           lastLegendLength - (np1 - legend.Length)
         else
           0
@@ -80,7 +90,11 @@ module ConsoleFunctions =
           let i = row-col
           let j = col
           let v = f triangle.points.[i].[j]
-          [| intToAsciiChar v; " " |]
+          match fancyPrinterOpt with
+          | Some fancyPrinter -> 
+            [| fancyPrinter v; mainPrinter v; resetAnsiEscapeColour; " " |]
+          | None ->
+            [| mainPrinter v; " " |]
         )
       let thisLegend = 
         if row < legend.Length then
@@ -99,48 +113,16 @@ module ConsoleFunctions =
       printer <| sprintf "%s%s%s%s" thisLegendText frontPadding (System.String.Concat mainStr) backPadding)
     printer resetAnsiEscapeColour
 
-  let printTriangle printer (f : 'A -> float) (triangle : SingleTriangle<'A>) =
+  let printTriangleInt printer (f : 'A -> int) (triangle : SingleTriangle<'A>) =
+    let legend = [||]
+    printTriangle printer f intToAsciiChar None legend triangle
+
+  let printTriangleFloat printer (f : 'A -> float) (triangle : SingleTriangle<'A>) =
     let legend = 
       getLegendKeyValues floatToAnsiEscapeColour floatToAsciiChar keyValuesForLegend
       |> Array.ofList
-    let np1 = triangle.points.[0].Length
-    let extraPadding =
-      if legend |> Array.isEmpty then
-        0
-      else      
-        let lastLegendLength = legend.[legend.Length - 1].unescapedText.Length
-        if lastLegendLength > (np1 - legend.Length)then
-          lastLegendLength - (np1 - legend.Length)
-        else
-          0
-    [0..np1-1]
-    |> List.iter(fun row ->
-      let mainStr = 
-        [|0..row|]
-        |> Array.collect(fun col ->
-          let i = row-col
-          let j = col
-          let v = f triangle.points.[i].[j]
-          [| floatToAnsiEscapeColour v; floatToAsciiChar v; floatToAnsiEscapeColour 1.0; " " |]
-          //[| floatToAsciiChar v; ' ' |]
-        )
-      let thisLegend = 
-        if row < legend.Length then
-          Some legend.[row]
-        else
-          None
+    printTriangle printer f floatToAsciiChar (Some floatToAnsiEscapeColour) legend triangle
 
-      let thisLegendLength = thisLegend |> Option.map(fun x -> x.unescapedText.Length) |> Option.defaultValue 0
-      let thisLegendText = thisLegend |> Option.map(fun x -> x.actualText) |> Option.defaultValue ""
-      let paddingLength = extraPadding + np1 - row - 1 - thisLegendLength
-      let frontPadding = 
-        if paddingLength > 0 then
-          String.replicate paddingLength " "
-        else ""
-      let backPadding = String.replicate (np1 - row - 1) " "
-      printer <| sprintf "%s%s%s%s" thisLegendText frontPadding (System.String.Concat mainStr) backPadding)
-    printer resetAnsiEscapeColour
- 
   let printIcosa printer (id : TriangleSet<KeyedPoint<Coordinate>>) =
     printer <| sprintf "IcosaDivision Scale=%i" id.triangles.[0].points.Length
 
@@ -167,11 +149,29 @@ module ConsoleFunctions =
       | _ -> None)
     |> Option.defaultValue 0
 
+  let getNonCanonicalArg args =
+    args
+    |> List.tryPick(fun s ->
+      match s with
+      | ParseRegex "nc=([tTfF]*)$" [nc] -> 
+        let nc' = nc.ToLower()
+        if nc' = "t" then
+          Some(true)
+        elif nc' = "f" then
+          Some(false)
+        elif nc' = "" then
+          Some(true)
+        else
+          None
+      | _ -> None)
+    |> Option.defaultValue false
+
   let clusterDetails printer args (cs : CompleteClusterAssignment<'A>) =
     let t = getTriangleArg args
+    let nc = getNonCanonicalArg args
     let ts =  cs.meshData
     let triangle = ts.triangles.[t]
-    let clusterIdFrom ts' (b : BasicPoint)= 
+    let clusterIdFrom ts' (b : BasicPoint) = 
       let key = b.key 
       let url = keyToUrl ts' t key
       cs.clusterAssignments
@@ -182,12 +182,26 @@ module ConsoleFunctions =
         |> Map.tryFind url2
         |> Option.defaultWith(fun () -> 
           failwith <| sprintf "Could not find cluster for %A" url))
-         
-    printTriangleInt printer (clusterIdFrom ts) triangle
+    let clusterIdFrom_CanonicalOnly ts' (b : BasicPoint) = 
+      let key = b.key 
+      let url = keyToUrl ts' t key
+      let url2 = normalizeElement ts url
+      if url = url2 then
+        cs.clusterAssignments
+        |> Map.tryFind url
+        |> Option.orElseWith(fun () -> 
+          failwith <| sprintf "Could not find cluster for %A" url)
+      else
+        None
+
+    if nc then
+      printTriangle printer (clusterIdFrom_CanonicalOnly ts) intOptToAsciiChar (Some intOptRedIfMissing) Array.empty triangle
+    else 
+      printTriangleInt printer (clusterIdFrom ts) triangle
 
   let geoHeightDetails printer args gds =
     let t = getTriangleArg args
-    printTriangle printer (fun p -> 4.0*(p.datum.r-1.0)) gds.triangleSet.triangles.[t]
+    printTriangleFloat printer (fun p -> 4.0*(p.datum.r-1.0)) gds.triangleSet.triangles.[t]
 
   let printGeoDivision printer (gds : GeoDivisionState<(char*int) list>) =
      printer <| sprintf "GeoDivision Scale=%i" gds.triangleSet.triangles.[0].points.Length

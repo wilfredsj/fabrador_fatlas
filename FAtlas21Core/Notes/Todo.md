@@ -64,6 +64,7 @@
   //       -70: Histogram of number of elements in each cluster (i.e. continent size)
   //       -72: Inverse function for urlToKey
   //       -71: Console Triangle plot has cluster/continent membership
+  //       -73: Console Triangle plot can exclude non-canonical vertices
 
 
   // TODO:
@@ -77,4 +78,3 @@
   //       -63: Console histograms of geomesh feature
   //       -64: Console histograms of land mass / sea bodies
   // 	   -69: Console Triangle plot has floor value (e.g. sea level) 
-  //       -73: Console Trinagle plot can exclude non-canonical vertices
