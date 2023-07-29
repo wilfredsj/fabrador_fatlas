@@ -37,6 +37,16 @@ module ConsoleFunctions =
     let colour = 16 + b + 6 * g + 36 * r
     sprintf "\x1b[38;5;%im" colour
 
+  let intToAsciiChar (i : int) = 
+    // single character for values up to 60
+    if i < 10 then
+      sprintf "%i" i
+    elif i < 36 then
+      sprintf "%c" (char (i + 55))
+    elif i < 62 then
+      sprintf "%c" (char (i + 61))
+    else
+      "?"
 
   let floatToAsciiChar (f : float) =
     // heavier character for higher values
@@ -49,6 +59,45 @@ module ConsoleFunctions =
       chars.[nChars - 1] |> string
     else
       chars.[f'] |> string
+
+  let printTriangleInt printer (f : 'A -> int) (triangle : SingleTriangle<'A>) =
+    let legend = [||]
+    let np1 = triangle.points.[0].Length
+    let extraPadding =
+      if legend |> Array.isEmpty then
+        0
+      else      
+        let lastLegendLength = legend.[legend.Length - 1].unescapedText.Length
+        if lastLegendLength > (np1 - legend.Length)then
+          lastLegendLength - (np1 - legend.Length)
+        else
+          0
+    [0..np1-1]
+    |> List.iter(fun row ->
+      let mainStr = 
+        [|0..row|]
+        |> Array.collect(fun col ->
+          let i = row-col
+          let j = col
+          let v = f triangle.points.[i].[j]
+          [| intToAsciiChar v; " " |]
+        )
+      let thisLegend = 
+        if row < legend.Length then
+          Some legend.[row]
+        else
+          None
+
+      let thisLegendLength = thisLegend |> Option.map(fun x -> x.unescapedText.Length) |> Option.defaultValue 0
+      let thisLegendText = thisLegend |> Option.map(fun x -> x.actualText) |> Option.defaultValue ""
+      let paddingLength = extraPadding + np1 - row - 1 - thisLegendLength
+      let frontPadding = 
+        if paddingLength > 0 then
+          String.replicate paddingLength " "
+        else ""
+      let backPadding = String.replicate (np1 - row - 1) " "
+      printer <| sprintf "%s%s%s%s" thisLegendText frontPadding (System.String.Concat mainStr) backPadding)
+    printer resetAnsiEscapeColour
 
   let printTriangle printer (f : 'A -> float) (triangle : SingleTriangle<'A>) =
     let legend = 
@@ -104,16 +153,40 @@ module ConsoleFunctions =
   let printTectonicAssigned printer (tec : TectonicData<(char*int) list>) =
     printer <| sprintf "TectonicAssigned #Plates=%i" tec.plates.Length
 
-  let geoHeightDetails printer args gds =
-    let tOpt = 
-      args 
-      |> List.tryPick(fun s -> 
-        match s with
-        | ParseRegex "t=([0-9]+)" [t] -> 
-          let t' = int t
+  let getTriangleArg args =
+    args 
+    |> List.tryPick(fun s -> 
+      match s with
+      | ParseRegex "t=([0-9]+)" [t] -> 
+        let t' = int t
+        // It's an icosahedron so:
+        if t' < 20 then
           Some(t')
-        | _ -> None)
-    let t = Option.defaultValue 0 tOpt
+        else
+          None
+      | _ -> None)
+    |> Option.defaultValue 0
+
+  let clusterDetails printer args (cs : CompleteClusterAssignment<'A>) =
+    let t = getTriangleArg args
+    let ts =  cs.meshData
+    let triangle = ts.triangles.[t]
+    let clusterIdFrom ts' (b : BasicPoint)= 
+      let key = b.key 
+      let url = keyToUrl ts' t key
+      cs.clusterAssignments
+      |> Map.tryFind url
+      |> Option.defaultWith(fun () -> 
+        let url2 = normalizeElement ts url
+        cs.clusterAssignments
+        |> Map.tryFind url2
+        |> Option.defaultWith(fun () -> 
+          failwith <| sprintf "Could not find cluster for %A" url))
+         
+    printTriangleInt printer (clusterIdFrom ts) triangle
+
+  let geoHeightDetails printer args gds =
+    let t = getTriangleArg args
     printTriangle printer (fun p -> 4.0*(p.datum.r-1.0)) gds.triangleSet.triangles.[t]
 
   let printGeoDivision printer (gds : GeoDivisionState<(char*int) list>) =

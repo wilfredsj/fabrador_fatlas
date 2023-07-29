@@ -58,6 +58,10 @@ module AtlasConsoleView =
 
   let consoleDetails printer state (cc : ConsoleCommandTyped) = 
     match cc.target with
+    | Cluster ->
+      match tryExtractCompleteClusterData state.model with
+      | Some cs -> clusterDetails printer cc.args cs
+      | None -> printer "No Cluster"
     | GeoMesh ->
       match tryExtractGeoMesh state.model with
       | Some gds -> geoHeightDetails printer cc.args gds

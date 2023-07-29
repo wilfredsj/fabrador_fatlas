@@ -260,5 +260,23 @@ let testAllUrlsReasonablyAdjacent (ts, urlList) =
 [<Test>]
 let TestAllNeighboursRegularN4() = 
   ts4 |> allUrlsForSet |> testAllUrlsReasonablyAdjacent
-    
+
+// AETHER-72
+[<Test>]
+let TestKeyToUrl () =
+  let ts = ts4
+  let testRoundTrip url =
+    let key = urlToKey ts url
+    let url' = keyToUrl ts url.t key
+    Assert.AreEqual(url, url')
+  let urls = 
+    [
+      {t = 0; i = 0; j = 0};
+      {t = 0; i = 0; j = 1};
+      {t = 0; i = 0; j = 5};
+      {t = 0; i = 1; j = 4};
+      {t = 0; i = 3; j = 2}
+    ]
+  urls
+  |> List.iter(fun u -> testRoundTrip u)
 

@@ -307,14 +307,14 @@ module TriangleMeshFunctions =
     let aweigt = a |> List.sumBy snd
     let bweight = b |> List.sumBy snd
 
-    let exclusiveA = a |> List.exists(fun (ka,_) -> List.exists(fun (kb,_) -> ka = kb) b |> not)
-    let exclusiveB = b |> List.exists(fun (ka,_) -> List.exists(fun (kb,_) -> ka = kb) a |> not)
+    //let exclusiveA = a |> List.exists(fun (ka,_) -> List.exists(fun (kb,_) -> ka = kb) b |> not)
+    //let exclusiveB = b |> List.exists(fun (ka,_) -> List.exists(fun (kb,_) -> ka = kb) a |> not)
 
-    let x = 
-      if exclusiveA && exclusiveB then
-        2
-      else 
-        1
+    //let x = 
+    //  if exclusiveA && exclusiveB then
+    //    2
+    //  else 
+    //    1
       
     let (am, bm) =
       if aweigt > bweight then
@@ -908,6 +908,22 @@ module TriangleMeshFunctions =
     let t = ts.triangles.[url.t]
     let p = t.points.[url.i].[url.j]
     p.key
+
+  let keyToUrl (ts : TriangleSet<KeyedPoint<'A>>) (ti : int) (key : (char*int) list) = 
+    let t = ts.triangles.[ti]
+    let N = (Array.length t.points) - 1
+
+    let (a,b,c) = extractKey t 
+    let na = key |> List.filter(fun kv -> fst kv = a) |> List.sumBy snd
+    let nb = key |> List.filter(fun kv -> fst kv = b) |> List.sumBy snd
+    let nc = key |> List.filter(fun kv -> fst kv = c) |> List.sumBy snd
+    let sum = na + nb + nc
+    let factor =
+      if sum < N then
+        N / sum
+      else
+        1
+    { t = ti; i = nb * factor; j = nc * factor}    
 
   let getAllPointsWithDuplicates (ts : TriangleSet<'A>) =
     ts.triangles
