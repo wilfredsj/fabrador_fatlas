@@ -66,6 +66,7 @@
   //       -71: Console Triangle plot has cluster/continent membership
   //       -73: Console Triangle plot can exclude non-canonical vertices
   //       -74: Add some cache of recent params to console
+  // 	   -69: Console Triangle plot has floor value (e.g. sea level) 
 
 
   // TODO:
@@ -78,4 +79,3 @@
   //       -55: GeoMesh <-> file            
   //       -63: Console histograms of geomesh feature
   //       -64: Console histograms of land mass / sea bodies
-  // 	   -69: Console Triangle plot has floor value (e.g. sea level) 

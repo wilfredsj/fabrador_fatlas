@@ -4,11 +4,13 @@ module ConsoleTypes =
 
   type CachedArg = 
   | LastTriangle of int
+  | LastSeaLevel of float Option
   | Dummy
 
   let isSameKey (arg1:CachedArg) (arg2:CachedArg) =
     match arg1, arg2 with
     | LastTriangle i1, LastTriangle i2 -> true
+    | LastSeaLevel f1, LastSeaLevel f2 -> true
     | _ -> false
 
   let updatedCachedArg (oldList : CachedArg list) (newElt:CachedArg) =

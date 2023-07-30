@@ -136,8 +136,23 @@ module ConsoleFunctions =
   let printTectonicAssigned printer (tec : TectonicData<(char*int) list>) =
     printer <| sprintf "TectonicAssigned #Plates=%i" tec.plates.Length
 
+  let getSeaLevelArg (lastArgs : CachedArg list) args =
+    args 
+    |> List.tryPick(fun s -> 
+      match s with
+      | ParseRegex "s=([0-9.]+)" [s] -> Some(float s)
+      | ParseRegex "s=[yY]" [] -> Some(1.0)
+      | ParseRegex "s=[nN]" [] -> None
+      | ParseRegex "s=" [s] -> Some(1.0)
+      | _ -> None)
+    |> Option.orElse(
+      lastArgs 
+      |> List.tryPick(fun s -> 
+        match s with
+        | LastSeaLevel fOpt -> fOpt
+        | _ -> None))
+
   let getTriangleArg (lastArgs : CachedArg list) args =
-    printfn "Debug getTriangleArg lastArgs=%A args=%A" lastArgs args
     args 
     |> List.tryPick(fun s -> 
       match s with
@@ -219,8 +234,31 @@ module ConsoleFunctions =
 
   let geoHeightDetails printer lastArgs args gds =
     let t = getTriangleArg lastArgs args
-    printTriangleFloat printer (fun p -> 4.0*(p.datum.r-1.0)) gds.triangleSet.triangles.[t]
-    [LastTriangle t]
+    let seaLevelOpt = getSeaLevelArg lastArgs args
+    match seaLevelOpt with
+    | None -> 
+        printTriangleFloat printer (fun p -> 4.0*(p.datum.r-1.0)) gds.triangleSet.triangles.[t]
+    | Some seaLevel ->
+        let f = (fun p -> 
+          if p.datum.r > seaLevel then
+            4.0*(p.datum.r-1.0), true
+          else
+            0.0, false) 
+        let asciiPrinter (f, isLand) = 
+          if isLand then
+            floatToAsciiChar f
+          else
+            "~"
+        let fancyPrinter (f, isLand) = 
+          if isLand then
+            floatToAnsiEscapeColour f
+          else
+            //BLUE escape code:
+            "\x1b[34m"
+
+        printTriangle printer f asciiPrinter (Some fancyPrinter) Array.empty            
+            gds.triangleSet.triangles.[t]
+    [LastTriangle t; LastSeaLevel seaLevelOpt]
 
   let printGeoDivision printer (gds : GeoDivisionState<(char*int) list>) =
      printer <| sprintf "GeoDivision Scale=%i" gds.triangleSet.triangles.[0].points.Length
