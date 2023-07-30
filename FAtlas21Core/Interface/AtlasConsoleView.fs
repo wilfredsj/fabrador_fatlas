@@ -7,6 +7,7 @@ open GeoMeshTypes
 open AtlasStateTypes
 open ConsoleFunctions
 open AtlasViewFunctions
+open ConsoleTypes
 
 module AtlasConsoleView =
 
@@ -32,7 +33,7 @@ module AtlasConsoleView =
       match tryExtractTectonicData state.model with
       | Some tec -> printTectonicAssigned printer tec
       | None -> printer "No Tectonics"
-    state
+    state, []
 
   let consoleStats printer state (cc : ConsoleCommandTyped) =
     match cc.target with
@@ -54,25 +55,37 @@ module AtlasConsoleView =
       | None -> printer "No GeoMesh"
     | _ ->
       printer "Stats not supported for this target"
-    state
+    state, []
 
   let consoleDetails printer state (cc : ConsoleCommandTyped) = 
-    match cc.target with
-    | Cluster ->
-      match tryExtractCompleteClusterData state.model with
-      | Some cs -> clusterDetails printer cc.args cs
-      | None -> printer "No Cluster"
-    | GeoMesh ->
-      match tryExtractGeoMesh state.model with
-      | Some gds -> geoHeightDetails printer cc.args gds
-      | None -> printer "No GeoMesh"
-    | _ ->
-      printer "Details not supported for this target"
-    state
+    let lastArgs = 
+      state.consoleCache.cachedArgs
+    let argsUsed = 
+      match cc.target with
+      | Cluster ->
+        match tryExtractCompleteClusterData state.model with
+        | Some cs -> clusterDetails printer lastArgs cc.args cs
+        | None -> 
+          printer "No Cluster"
+          []
+      | GeoMesh ->
+        match tryExtractGeoMesh state.model with
+        | Some gds -> geoHeightDetails printer lastArgs cc.args gds
+        | None -> 
+          printer "No GeoMesh"
+          []
+      | _ ->
+        printer "Details not supported for this target"
+        []
+    state, argsUsed
       
   let processConsoleCommand printer state (cc : ConsoleCommandTyped) = 
-    match cc.action with
-    | Print -> consolePrint printer state cc
-    | Stats -> consoleStats printer state cc
-    | Details -> consoleDetails printer state cc
+    let (newState, argsUsed) = 
+      match cc.action with
+      | Print -> consolePrint printer state cc
+      | Stats -> consoleStats printer state cc
+      | Details -> consoleDetails printer state cc
+      
+    let args' = mergeCachedArgs state.consoleCache.cachedArgs argsUsed
+    { newState with consoleCache = { newState.consoleCache with lastConsoleCommand = Some cc; cachedArgs = args'} }
 

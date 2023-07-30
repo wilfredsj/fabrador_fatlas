@@ -4,6 +4,7 @@ open TriangleMeshTypes
 open CoordTypes
 open TectonicTypes
 open GeoMeshTypes
+open ConsoleTypes
 
 module AtlasStateTypes =
 
@@ -113,6 +114,24 @@ module AtlasStateTypes =
     makeColour : A3V -> 'C; 
     onUpdateCallback : (('V []*'C[]*int[]*string) list) -> unit;
     uiCallbackOpt : UIUnitCallbacks Option}
-  type AtlasCache = { triConverters : Map<int, VertexConverters>; hexConverters : Map<int, HexVertexConverters>; hexConvertersBD : Map<int, HexVertexConverters_BadDual> }
+  type AtlasCache = 
+    { 
+      triConverters : Map<int, VertexConverters>; 
+      hexConverters : Map<int, HexVertexConverters>; 
+      hexConvertersBD : Map<int, HexVertexConverters_BadDual> 
+    }
   let emptyCache = { triConverters = Map.empty; hexConverters = Map.empty; hexConvertersBD = Map.empty }
-  type AtlasState<'V,'C> = { render : RenderMode; model : ModelState; callbacks : AtlasCallbacks<'V,'C>; renderCache : AtlasCache}
+  type AtlasConsoleCache =
+    {
+      lastConsoleCommand : ConsoleCommandTyped Option
+      cachedArgs : CachedArg list
+    }
+  let emptyConsoleCache = { lastConsoleCommand = None; cachedArgs = List.empty }
+  type AtlasState<'V,'C> = 
+    { 
+      render : RenderMode; 
+      model : ModelState; 
+      callbacks : AtlasCallbacks<'V,'C>; 
+      renderCache : AtlasCache
+      consoleCache : AtlasConsoleCache
+    }

@@ -15,7 +15,13 @@ module Interface =
   let mutable rng = System.Random(1338)
 
 
-  let initState callbacks = { render = BasicCoordinate; model = Init; callbacks = callbacks; renderCache = emptyCache }
+  let initState callbacks = { 
+    render = BasicCoordinate; 
+    model = Init; 
+    callbacks = callbacks; 
+    renderCache = emptyCache;
+    consoleCache = emptyConsoleCache
+  }
 
   let defaultRenderMode state = 
     match state.model with

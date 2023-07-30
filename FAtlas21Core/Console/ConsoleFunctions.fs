@@ -6,6 +6,7 @@ open TectonicTypes
 open GeoMeshTypes
 open TriangleMeshFunctions
 open UtilTypes
+open ConsoleTypes
 
 module ConsoleFunctions =
 
@@ -135,10 +136,26 @@ module ConsoleFunctions =
   let printTectonicAssigned printer (tec : TectonicData<(char*int) list>) =
     printer <| sprintf "TectonicAssigned #Plates=%i" tec.plates.Length
 
-  let getTriangleArg args =
+  let getTriangleArg (lastArgs : CachedArg list) args =
+    printfn "Debug getTriangleArg lastArgs=%A args=%A" lastArgs args
     args 
     |> List.tryPick(fun s -> 
       match s with
+      | ParseRegex "t=([pPnN])" [a] ->
+        let t = a.ToLower().[0]
+        let offset = 
+          if t = 'p' then
+            19
+          else
+            1
+        let last =
+          lastArgs 
+          |> List.tryPick(fun s ->
+            match s with
+            | LastTriangle i -> Some i
+            | _ -> None) 
+          |> Option.defaultValue 0
+        Some((last + offset) % 20)
       | ParseRegex "t=([0-9]+)" [t] -> 
         let t' = int t
         // It's an icosahedron so:
@@ -166,8 +183,8 @@ module ConsoleFunctions =
       | _ -> None)
     |> Option.defaultValue false
 
-  let clusterDetails printer args (cs : CompleteClusterAssignment<'A>) =
-    let t = getTriangleArg args
+  let clusterDetails printer lastArgs args (cs : CompleteClusterAssignment<'A>) =
+    let t = getTriangleArg lastArgs args
     let nc = getNonCanonicalArg args
     let ts =  cs.meshData
     let triangle = ts.triangles.[t]
@@ -198,10 +215,12 @@ module ConsoleFunctions =
       printTriangle printer (clusterIdFrom_CanonicalOnly ts) intOptToAsciiChar (Some intOptRedIfMissing) Array.empty triangle
     else 
       printTriangleInt printer (clusterIdFrom ts) triangle
+    [LastTriangle t]
 
-  let geoHeightDetails printer args gds =
-    let t = getTriangleArg args
+  let geoHeightDetails printer lastArgs args gds =
+    let t = getTriangleArg lastArgs args
     printTriangleFloat printer (fun p -> 4.0*(p.datum.r-1.0)) gds.triangleSet.triangles.[t]
+    [LastTriangle t]
 
   let printGeoDivision printer (gds : GeoDivisionState<(char*int) list>) =
      printer <| sprintf "GeoDivision Scale=%i" gds.triangleSet.triangles.[0].points.Length

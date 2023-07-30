@@ -65,6 +65,7 @@
   //       -72: Inverse function for urlToKey
   //       -71: Console Triangle plot has cluster/continent membership
   //       -73: Console Triangle plot can exclude non-canonical vertices
+  //       -74: Add some cache of recent params to console
 
 
   // TODO:
