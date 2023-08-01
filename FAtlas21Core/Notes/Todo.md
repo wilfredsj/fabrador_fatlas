@@ -79,3 +79,4 @@
   //       -55: GeoMesh <-> file            
   //       -63: Console histograms of geomesh feature
   //       -64: Console histograms of land mass / sea bodies
+  //       -75: Display multiple triangle plots at once
