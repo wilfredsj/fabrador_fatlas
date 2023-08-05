@@ -276,3 +276,9 @@ module Interface =
     | None -> state
     | Some m2 -> updateModel state m2
 
+  let onConsoleInput model msgText =    
+    let message = forceMessage (partialMessage msgText)
+    printfn "Message: %A" message
+    let model' = updateModel model message
+    model'
+

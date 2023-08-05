@@ -36,6 +36,7 @@ let adaptedMsg s m =
   | DirectMessage m1 -> updateModel s m1
   | KeyDown ch -> onkeyPress s ch
   | KeyEnter -> onEnterPress s
+  | ConsoleInput str -> onConsoleInput s str
   | EventNoOp -> s
 
 [<EntryPoint>]

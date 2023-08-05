@@ -28,6 +28,7 @@ type PassedEvent<'Msg> =
   | KeyDown of char
   | KeyEnter
   | DirectMessage of 'Msg
+  | ConsoleInput of string
   | EventNoOp
 
 let direct m = DirectMessage m
@@ -176,6 +177,11 @@ void main(void)
 
 
   let generalCallback = updater
+
+  let getMessageFromConsole () : PassedEvent<'Msg> =
+    printf ">>"
+    let msgText = Console.ReadLine()
+    ConsoleInput msgText
   
   member o.overrideState newState =
     stateModel <- Some newState
@@ -329,17 +335,14 @@ void main(void)
 
     
 
-    let specialCharOpt = 
+    let msg = 
       match e.Key with
       | Keys.Enter
-      | Keys.Escape -> true
-      | _ -> false
-
-    let msg = 
-      match specialCharOpt with
-      | true -> KeyEnter
-      | false -> 
-        charOpt |> Option.map(KeyDown) |> Option.defaultValue EventNoOp
+      | Keys.Escape -> KeyEnter
+      | Keys.GraveAccent -> 
+        getMessageFromConsole ()
+      | _ -> charOpt |> Option.map(KeyDown) |> Option.defaultValue EventNoOp
+              
     
     stateModel
     |> Option.iter(fun s ->

@@ -1,7 +1,6 @@
 ﻿open System
 open FAtlas.Interface
 open FAtlas.AtlasStateTypes
-open FAtlas.AtlasIO
 
 let createFatlasInstance () = 
   let callbacks = { 
@@ -15,9 +14,7 @@ let createFatlasInstance () =
 let sendMessageFromConsoleToModel model () =
   printf ">>"
   let msgText = Console.ReadLine()
-  let message = forceMessage (partialMessage msgText)
-  printfn "Message: %A" message
-  let model' = updateModel model message
+  let model' = onConsoleInput model msgText
   model'
 
 let rec mainLoop model =

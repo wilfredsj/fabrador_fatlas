@@ -67,6 +67,7 @@
   //       -73: Console Triangle plot can exclude non-canonical vertices
   //       -74: Add some cache of recent params to console
   // 	   -69: Console Triangle plot has floor value (e.g. sea level) 
+  //       -76: Support console input in UI app
 
 
   // TODO:
