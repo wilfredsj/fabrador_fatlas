@@ -181,12 +181,17 @@ void main(void)
   let getMessageFromConsole () : PassedEvent<'Msg> =
     printf ">>"
     let msgText = Console.ReadLine()
-    let msgText' = 
-      if msgText.[0] <> '.' then
-        "." + msgText
-      else
-        msgText
-    ConsoleInput msgText'
+    if msgText = "quit" then
+      EventNoOp
+    else if msgText = "" then
+      EventNoOp
+    else
+      let msgText' = 
+        if msgText.[0] <> '.' then
+          "." + msgText
+        else
+          msgText
+      ConsoleInput msgText'
   
   member o.overrideState newState =
     stateModel <- Some newState
@@ -337,18 +342,31 @@ void main(void)
       | Keys.LeftBracket -> Some '['
       | Keys.RightBracket -> Some ']'
       | _ -> None
-
-    
+      
+    let rec consoleAndProcessLoop () =
+      let msg = getMessageFromConsole ()
+      match msg with
+      | EventNoOp -> 
+        printfn "============v====v============"
+        msg
+      | _ -> 
+        stateModel
+        |> Option.iter(fun s ->
+          let s' = generalCallback s msg
+          stateModel <- Some s')
+        consoleAndProcessLoop ()
 
     let msg = 
       match e.Key with
       | Keys.Enter
       | Keys.Escape -> KeyEnter
       | Keys.GraveAccent -> 
-        getMessageFromConsole ()
+        printfn "============^====^============"
+        consoleAndProcessLoop ()
       | _ -> charOpt |> Option.map(KeyDown) |> Option.defaultValue EventNoOp
               
     
+
     stateModel
     |> Option.iter(fun s ->
       let s' = generalCallback s msg
