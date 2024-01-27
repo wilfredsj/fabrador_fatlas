@@ -754,7 +754,7 @@ module TectonicFunctions =
           let stats' = stat :: stats
           (acc', stats')) (Map.empty, [])
 
-    let writeStats = true
+    let writeStats = false
     if writeStats then
       printGeoStats (printfn "%s") fg stats
       

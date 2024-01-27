@@ -68,6 +68,7 @@
   //       -74: Add some cache of recent params to console
   // 	   -69: Console Triangle plot has floor value (e.g. sea level) 
   //       -76: Support console input in UI app
+  //	   -79: Tidy up println spam
 
 
   // TODO:
@@ -81,3 +82,5 @@
   //       -63: Console histograms of geomesh feature
   //       -64: Console histograms of land mass / sea bodies
   //       -75: Display multiple triangle plots at once
+  //       -77: Console is flipped relative to UI, for t=7. Is it in all cases?
+  //       -78: Console can list valid commands
