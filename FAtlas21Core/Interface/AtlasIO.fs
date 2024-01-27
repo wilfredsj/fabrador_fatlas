@@ -2,6 +2,8 @@
 
 open AtlasStateTypes
 open UtilTypes
+open ConsoleTypes
+open ConsoleStrings
 
 module AtlasIO = 
 
@@ -12,20 +14,7 @@ module AtlasIO =
     | PartialMatch of Message
     | NoMatch
 
-  let parseConsoleAction str = 
-    match str with
-    | "print" | "info" -> Some Print
-    | "stats" -> Some Stats
-    | "details" -> Some Details
-    | _ -> None
-
-  let parseConsoleTarget str = 
-   match str with
-    | "state" -> Some State
-    | "tectonics" | "tec" | "tect" -> Some Tectonics
-    | "geo" | "geomesh" -> Some GeoMesh
-    | "cluster" | "clu" -> Some Cluster
-    | _ -> None
+  
 
   let parseConsoleCommand (str : string) =
     // Split on spaces
@@ -127,6 +116,22 @@ module AtlasIO =
     | "]" ->                 ForceMercator  |> UIInstruction |> ExactMatch 
     | ParseRegex "^[.](.+)" [commandStr] -> commandStr |> parseConsoleCommand |> PartialMatch
     | _ -> NoMatch
+
+  let helpMessages = [
+    "q_    - state transitions";
+    "qq    - restart";
+    "c     - View Clusters";
+    "d     - View Clusters (no connections)";
+    "x_    - View Icosahedron";
+    "s_    - View Geomesh (e.g. sn4)";
+    "[xs]v - View Stress";
+    "v_    - View Borders";
+    "a_    - Rotation commands";
+    "[     - Euclidian";
+    "]     - Mercator";
+    ".     - Internal prefix for console commands";
+    "`     - From UI, activate console input (e.g. 'help')"
+  ]
 
   let forceMessage m =
     match m with

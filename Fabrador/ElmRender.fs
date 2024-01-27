@@ -181,7 +181,12 @@ void main(void)
   let getMessageFromConsole () : PassedEvent<'Msg> =
     printf ">>"
     let msgText = Console.ReadLine()
-    ConsoleInput msgText
+    let msgText' = 
+      if msgText.[0] <> '.' then
+        "." + msgText
+      else
+        msgText
+    ConsoleInput msgText'
   
   member o.overrideState newState =
     stateModel <- Some newState

@@ -69,6 +69,7 @@
   // 	   -69: Console Triangle plot has floor value (e.g. sea level) 
   //       -76: Support console input in UI app
   //	   -79: Tidy up println spam
+  //       -78: Console can list valid commands
 
 
   // TODO:
@@ -83,4 +84,4 @@
   //       -64: Console histograms of land mass / sea bodies
   //       -75: Display multiple triangle plots at once
   //       -77: Console is flipped relative to UI, for t=7. Is it in all cases?
-  //       -78: Console can list valid commands
+  //       -80: Some way to make console stay in console mode

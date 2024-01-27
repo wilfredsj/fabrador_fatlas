@@ -177,6 +177,9 @@ module Interface =
       |> maybeUpdateCacheState ns
     else
       match message with
+      | UnknownCommand message ->
+        printfn "Unknown Command: %s" message
+        state
       | ConsoleCommand message ->
         processConsoleCommand (printfn "%s") state message
       | ReSeed newSeed ->
@@ -281,4 +284,10 @@ module Interface =
     printfn "Message: %A" message
     let model' = updateModel model message
     model'
+
+  let onCreate () =
+    printfn "Available commands:"
+    helpMessages |> List.iter (printfn "%s")
+    printfn "--"
+    ()
 

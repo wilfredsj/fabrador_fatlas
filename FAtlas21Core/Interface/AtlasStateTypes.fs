@@ -59,22 +59,12 @@ module AtlasStateTypes =
   | ForceMercator
   | ForceRotate of RenderRotationAction
 
-  type ConsoleAction =
-  | Print
-  | Stats
-  | Details
-
-  type ConsoleTarget = 
-  | State
-  | GeoMesh
-  | Tectonics
-  | Cluster
-
   let defaultTarget action =
     match action with
     | Print -> State
     | Stats -> State
     | Details -> GeoMesh
+    | Help -> State
 
   type ConsoleCommandTyped = 
     { action : ConsoleAction; target : ConsoleTarget; args : string list }

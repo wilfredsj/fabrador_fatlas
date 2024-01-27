@@ -8,8 +8,19 @@ open AtlasStateTypes
 open ConsoleFunctions
 open AtlasViewFunctions
 open ConsoleTypes
+open ConsoleStrings
 
 module AtlasConsoleView =
+
+  let actionTargetCombinations = Map.ofList [
+    Print, [State; Tectonics; GeoMesh]
+    Stats, [State; Tectonics; GeoMesh; Cluster]
+    Details, [Cluster; GeoMesh]
+    ] 
+
+  let printTargetsFor printer action =
+    printer "Available targets:"
+    actionTargetCombinations |> Map.find action |> List.iter (fun t -> printer (t |> consoleTargetToString))
 
   let printStateSummary state printer =
     let stateModel = state.model
@@ -33,6 +44,8 @@ module AtlasConsoleView =
       match tryExtractTectonicData state.model with
       | Some tec -> printTectonicAssigned printer tec
       | None -> printer "No Tectonics"
+    | THelp -> printTargetsFor printer Print
+      
     state, []
 
   let consoleStats printer state (cc : ConsoleCommandTyped) =
@@ -53,6 +66,7 @@ module AtlasConsoleView =
       match tryExtractGeoMesh state.model with
       | Some gds -> geoHeightStats printer gds.triangleSet
       | None -> printer "No GeoMesh"
+    | THelp -> printTargetsFor printer Stats
     | _ ->
       printer "Stats not supported for this target"
     state, []
@@ -74,10 +88,18 @@ module AtlasConsoleView =
         | None -> 
           printer "No GeoMesh"
           []
+      | THelp -> 
+        printTargetsFor printer Details
+        []
       | _ ->
         printer "Details not supported for this target"
         []
     state, argsUsed
+    
+  let consoleHelp printer state (cc : ConsoleCommandTyped) =
+    printer "Available Commands:"
+    uniqueActions |> Seq.iter (fun a -> printer a)
+    state, []
       
   let processConsoleCommand printer state (cc : ConsoleCommandTyped) = 
     let (newState, argsUsed) = 
@@ -85,6 +107,7 @@ module AtlasConsoleView =
       | Print -> consolePrint printer state cc
       | Stats -> consoleStats printer state cc
       | Details -> consoleDetails printer state cc
+      | AHelp -> consoleHelp printer state cc
       
     let args' = mergeCachedArgs state.consoleCache.cachedArgs argsUsed
     { newState with consoleCache = { newState.consoleCache with lastConsoleCommand = Some cc; cachedArgs = args'} }

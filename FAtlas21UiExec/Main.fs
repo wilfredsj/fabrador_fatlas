@@ -24,6 +24,7 @@ let rotateConv =
   
 
 let atlasCallback updateVertices eucl merc rot = 
+  onCreate ()
   let uiCb = { 
     forceEuclidian = eucl; 
     forceMercator = merc 
@@ -52,6 +53,7 @@ let main argv =
 
   let initScript_ = [NoOp; Divide 4; ClusterInit None; ClusterIterate 5000] 
   let initScript = [NoOp; Divide 4; ClusterInit None; ClusterIterate 5000; AssignTectonics; InitGeoMesh false; Divide 1] 
+  
   //let initScript = [NoOp; Divide 3; ClusterInit (Some 10); ClusterIterate 5000; AssignTectonics; InitGeoMesh false] 
   createElmWindow initState atlasCallback adaptedMsg initScript
 

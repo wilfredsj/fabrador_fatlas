@@ -1,6 +1,18 @@
 ﻿namespace FAtlas
 
 module ConsoleTypes =
+  type ConsoleAction =
+  | Print
+  | Stats
+  | Details
+  | AHelp
+
+  type ConsoleTarget = 
+  | State
+  | GeoMesh
+  | Tectonics
+  | Cluster
+  | THelp
 
   type CachedArg = 
   | LastTriangle of int
@@ -22,4 +34,5 @@ module ConsoleTypes =
     newList
     |> List.fold(fun oldAcc newElt -> updatedCachedArg oldAcc newElt) old
       
-
+      
+  
