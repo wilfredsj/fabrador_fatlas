@@ -71,6 +71,7 @@
   //	   -79: Tidy up println spam
   //       -78: Console can list valid commands
   //       -80: Some way to make console stay in console mode
+  //       -82: Re-invent curses-like display for layering
 
 
   // TODO:
@@ -80,8 +81,9 @@
   //       -52: Id Land masses
   //       -53: Id sea bodies
   //       -54: ID drainage basins
-  //       -55: GeoMesh <-> file            
+  //       -55: GeoMesh <-> file
   //       -63: Console histograms of geomesh feature
   //       -64: Console histograms of land mass / sea bodies
   //       -75: Display multiple triangle plots at once
   //       -77: Console is flipped relative to UI, for t=7. Is it in all cases?
+  //       -81: Show indices of neighbouring triangles in triangle plot

@@ -45,6 +45,8 @@ module AtlasConsoleView =
       | Some tec -> printTectonicAssigned printer tec
       | None -> printer "No Tectonics"
     | THelp -> printTargetsFor printer Print
+    | _ ->
+      printer "Print not supported for this target"
       
     state, []
 

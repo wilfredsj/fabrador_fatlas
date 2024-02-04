@@ -35,6 +35,7 @@
     <Compile Include="View\ViewHelperFunctions.fs" />
     <Compile Include="Console\ConsoleTypes.fs" />
     <Compile Include="Console\ConsoleStrings.fs" />
+    <Compile Include="Console\ConsoleGridFunctions.fs" />
     <Compile Include="Console\ConsoleFunctions.fs" />
     <Compile Include="Interface\AtlasStateTypes.fs" />
     <Compile Include="Interface\AtlasViewFunctions.fs" />

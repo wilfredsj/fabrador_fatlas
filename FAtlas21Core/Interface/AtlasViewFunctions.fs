@@ -145,8 +145,8 @@ module AtlasViewFunctions =
     |> Array.indexed
     |> fun tsi ->
       match iOpt with 
-      | Some i -> [| tsi.[i] |]
-      | None -> tsi
+      | Some i when i < 20 -> [| tsi.[i] |]
+      | _ -> tsi
     |> Array.mapFold (drawIcosaFakeHexSection toSimpleCart2 toSimpleCart3 colourer state ts) None
 
   let solidViewIcosaSection rOpt iOpt colourer state ts =

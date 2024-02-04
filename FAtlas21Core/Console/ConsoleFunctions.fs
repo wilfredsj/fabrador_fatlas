@@ -7,6 +7,7 @@ open GeoMeshTypes
 open TriangleMeshFunctions
 open UtilTypes
 open ConsoleTypes
+open ConsoleGridFunctions
 
 module ConsoleFunctions =
 
@@ -15,9 +16,6 @@ module ConsoleFunctions =
     actualText : string;
     unescapedText : string
   }
-
-  let resetAnsiEscapeColour =
-    "\x1b[0m"
 
   let keyValuesForLegend =
     [0.0; 0.1; 0.2; 0.3; 0.4; 0.5; 0.6; 0.7; 0.8; 0.9; 1.0]
@@ -29,14 +27,23 @@ module ConsoleFunctions =
       let unescapedText = sprintf "| %-3f : %s |" v (String.concat "" [| charer v |])
       { value = v; actualText = actualText; unescapedText = unescapedText })
 
-  let floatToAnsiEscapeColour (f' : float) =
-    //assume f between 0 and 1
-    let f = min 1.0 <| max 0.0 f'
-    let r = 5 - int (f * 5.0)
-    let g = int (f * 5.0)
-    let b = 0
-    let colour = 16 + b + 6 * g + 36 * r
-    sprintf "\x1b[38;5;%im" colour
+  let getLegendKeyValuesGrid (grid: ConsoleGrid) (escaper : float -> string) (charer : float -> string) (keyValues : float list) =
+    let writes =
+      keyValues 
+      |> List.indexed
+      |> List.collect(fun (row,v) -> 
+        let asString3 = sprintf "%.3f" v
+        let escape = escaper v
+        let char = charer v
+        [
+          gridWritePlain row 0 "|";
+          gridWritePlain row 2 asString3;
+          gridWritePlain row 8 ":";
+          gridWrite row 10 (string char) (Some escape);
+          gridWritePlain row 12 "|"
+        ]
+      )
+    writeStringsIntoGrid grid writes
 
   let intToAsciiChar (i : int) = 
     // single character for values up to 60
@@ -71,6 +78,29 @@ module ConsoleFunctions =
     else
       chars.[f'] |> string
 
+  let writeTriangleToGrid grid (f : 'A -> 'B) (mainPrinter : 'B -> string) (fancyPrinterOpt : ('B -> string) option) (triangle : SingleTriangle<'A>) =
+    let np1 = triangle.points.[0].Length
+    let writes =
+      [0..np1-1]
+      |> List.collect(fun row ->
+        [0..row]
+        |> List.map(fun col ->
+          let i = row-col
+          let j = col
+          let v = f triangle.points.[i].[j]
+
+          let writeRow = row
+          let writeCol = np1 - row + 2 * col
+
+
+          match fancyPrinterOpt with
+          | Some fancyPrinter -> 
+            gridWrite writeRow writeCol (mainPrinter v) (Some <| fancyPrinter v) 
+          | None ->
+            gridWritePlain writeRow writeCol (mainPrinter v)
+          )
+       )
+    writeStringsIntoGrid grid writes      
       
   let printTriangle printer (f : 'A -> 'B) (mainPrinter : 'B -> string) (fancyPrinterOpt : ('B -> string) option) (legend : LegendRow<'B> array) (triangle : SingleTriangle<'A>) =
     let np1 = triangle.points.[0].Length
@@ -123,6 +153,13 @@ module ConsoleFunctions =
       getLegendKeyValues floatToAnsiEscapeColour floatToAsciiChar keyValuesForLegend
       |> Array.ofList
     printTriangle printer f floatToAsciiChar (Some floatToAnsiEscapeColour) legend triangle
+
+    
+  let printTriangleFloatGrid grid printer (f : 'A -> float) (triangle : SingleTriangle<'A>) =
+    let grid' = 
+      getLegendKeyValuesGrid grid floatToAnsiEscapeColour floatToAsciiChar keyValuesForLegend
+    let grid'' = writeTriangleToGrid grid' f floatToAsciiChar (Some floatToAnsiEscapeColour) triangle
+    printGrid grid'' printer
 
   let printIcosa printer (id : TriangleSet<KeyedPoint<Coordinate>>) =
     printer <| sprintf "IcosaDivision Scale=%i" id.triangles.[0].points.Length
@@ -236,8 +273,10 @@ module ConsoleFunctions =
     let t = getTriangleArg lastArgs args
     let seaLevelOpt = getSeaLevelArg lastArgs args
     match seaLevelOpt with
-    | None -> 
-        printTriangleFloat printer (fun p -> 4.0*(p.datum.r-1.0)) gds.triangleSet.triangles.[t]
+    | None ->         
+        let grid = defaultConsoleGrid ()
+        printTriangleFloatGrid grid printer (fun p -> 4.0*(p.datum.r-1.0)) gds.triangleSet.triangles.[t]
+        ()
     | Some seaLevel ->
         let f = (fun p -> 
           if p.datum.r > seaLevel then

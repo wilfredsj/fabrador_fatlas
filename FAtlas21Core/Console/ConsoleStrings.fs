@@ -1,7 +1,6 @@
 ﻿namespace FAtlas
 
 open ConsoleTypes
-
 module ConsoleStrings =
 
   let consoleActionMap = 

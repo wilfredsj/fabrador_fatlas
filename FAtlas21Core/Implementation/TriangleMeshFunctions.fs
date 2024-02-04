@@ -746,6 +746,28 @@ module TriangleMeshFunctions =
       along @ far 
     non_local
 
+  let addCounterCyclicIntoMap (map : Map<OrientedEdge, 'A>) = 
+    map
+    |> Map.add (OE_BA, Map.find OE_AB map)
+    |> Map.add (OE_AC, Map.find OE_CA map)
+    |> Map.add (OE_CB, Map.find OE_BC map)
+
+  let getAllOtherTriangles (ts : TriangleSet<'A>) (t : int) = 
+    let st = ts.triangles.[t]
+    let N = dim st
+    let (a,b,c) = extractKey st
+    let edges = [
+      (OE_AB,(a,b));
+      (OE_BC,(b,c));
+      (OE_CA,(c,a))
+      ]
+    edges
+    |> List.map(fun (oe, oe_key) -> 
+      let (o_t, o_o) = getOtherTriangleForEdge ts t oe_key
+      (oe, o_t))
+    |> Map.ofList
+    |> addCounterCyclicIntoMap
+
   let getVertexNeighbours (ts : TriangleSet<'A>) (st: SingleTriangle<'A>) (t : int) (i,j) = 
     // points
     // "A" [0][0]    ->        -> "C" [0][N]

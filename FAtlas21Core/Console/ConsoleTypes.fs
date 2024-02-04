@@ -34,5 +34,14 @@ module ConsoleTypes =
     newList
     |> List.fold(fun oldAcc newElt -> updatedCachedArg oldAcc newElt) old
       
-      
+  type ConsoleCell = { text : char; escapeText : string option; postText : string option }
+
+  type ConsoleLine = ConsoleCell array
+  type ConsoleGrid = { lines : ConsoleLine array; width : int }
+
+  type ConsoleGridWrite = {  row : int; col : int; str : string; escapeString : string option }
+  let gridWritePlain row col str = { row = row; col = col; str = str; escapeString = None }
+  let gridWrite row col str escapeString = { row = row; col = col; str = str; escapeString = escapeString }
+
+  let defaultConsoleGrid () = { lines = Array.empty; width = 80 }
   
