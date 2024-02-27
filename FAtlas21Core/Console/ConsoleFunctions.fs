@@ -153,7 +153,10 @@ module ConsoleFunctions =
       getLegendKeyValues floatToAnsiEscapeColour floatToAsciiChar keyValuesForLegend
       |> Array.ofList
     printTriangle printer f floatToAsciiChar (Some floatToAnsiEscapeColour) legend triangle
-
+    
+  let printTriangleGrid grid printer (f : 'A -> 'B) (mainPrinter : 'B -> string) (fancyPrinterOpt : ('B -> string) option) (triangle : SingleTriangle<'A>) =
+    let grid' = writeTriangleToGrid grid f mainPrinter fancyPrinterOpt triangle
+    printGrid grid' printer
     
   let printTriangleFloatGrid grid printer (f : 'A -> float) (triangle : SingleTriangle<'A>) =
     let grid' = 
@@ -177,12 +180,12 @@ module ConsoleFunctions =
     args 
     |> List.tryPick(fun s -> 
       match s with
-      | ParseRegex "s=([0-9.]+)" [s] -> Some(float s)
-      | ParseRegex "s=[yY]" [] -> Some(1.0)
-      | ParseRegex "s=[nN]" [] -> None
-      | ParseRegex "s=" [s] -> Some(1.0)
+      | ParseRegex "s=([0-9.]+)" [s] -> Some(Some(float s))
+      | ParseRegex "s=[yY]" [] -> Some(Some(1.0))
+      | ParseRegex "s=[nN]" [] -> Some(None)
+      | ParseRegex "s=" [] -> Some(Some(1.0))
       | _ -> None)
-    |> Option.orElse(
+    |> Option.defaultValue(
       lastArgs 
       |> List.tryPick(fun s -> 
         match s with
@@ -272,11 +275,10 @@ module ConsoleFunctions =
   let geoHeightDetails printer lastArgs args gds =
     let t = getTriangleArg lastArgs args
     let seaLevelOpt = getSeaLevelArg lastArgs args
+    let grid = defaultConsoleGrid ()
     match seaLevelOpt with
     | None ->         
-        let grid = defaultConsoleGrid ()
         printTriangleFloatGrid grid printer (fun p -> 4.0*(p.datum.r-1.0)) gds.triangleSet.triangles.[t]
-        ()
     | Some seaLevel ->
         let f = (fun p -> 
           if p.datum.r > seaLevel then
@@ -294,9 +296,8 @@ module ConsoleFunctions =
           else
             //BLUE escape code:
             "\x1b[34m"
+        printTriangleGrid grid printer f asciiPrinter (Some fancyPrinter) gds.triangleSet.triangles.[t]
 
-        printTriangle printer f asciiPrinter (Some fancyPrinter) Array.empty            
-            gds.triangleSet.triangles.[t]
     [LastTriangle t; LastSeaLevel seaLevelOpt]
 
   let printGeoDivision printer (gds : GeoDivisionState<(char*int) list>) =
