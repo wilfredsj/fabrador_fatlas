@@ -100,62 +100,14 @@ module ConsoleFunctions =
             gridWritePlain writeRow writeCol (mainPrinter v)
           )
        )
-    writeStringsIntoGrid grid writes      
-      
-  let printTriangle printer (f : 'A -> 'B) (mainPrinter : 'B -> string) (fancyPrinterOpt : ('B -> string) option) (legend : LegendRow<'B> array) (triangle : SingleTriangle<'A>) =
-    let np1 = triangle.points.[0].Length
-    let extraPadding =
-      if legend |> Array.isEmpty then
-        0
-      else      
-        let lastLegendLength = legend.[legend.Length - 1].unescapedText.Length
-        if lastLegendLength > (np1 - legend.Length) then
-          lastLegendLength - (np1 - legend.Length)
-        else
-          0
-    [0..np1-1]
-    |> List.iter(fun row ->
-      let mainStr = 
-        [|0..row|]
-        |> Array.collect(fun col ->
-          let i = row-col
-          let j = col
-          let v = f triangle.points.[i].[j]
-          match fancyPrinterOpt with
-          | Some fancyPrinter -> 
-            [| fancyPrinter v; mainPrinter v; resetAnsiEscapeColour; " " |]
-          | None ->
-            [| mainPrinter v; " " |]
-        )
-      let thisLegend = 
-        if row < legend.Length then
-          Some legend.[row]
-        else
-          None
+    writeStringsIntoGrid grid writes
 
-      let thisLegendLength = thisLegend |> Option.map(fun x -> x.unescapedText.Length) |> Option.defaultValue 0
-      let thisLegendText = thisLegend |> Option.map(fun x -> x.actualText) |> Option.defaultValue ""
-      let paddingLength = extraPadding + np1 - row - 1 - thisLegendLength
-      let frontPadding = 
-        if paddingLength > 0 then
-          String.replicate paddingLength " "
-        else ""
-      let backPadding = String.replicate (np1 - row - 1) " "
-      printer <| sprintf "%s%s%s%s" thisLegendText frontPadding (System.String.Concat mainStr) backPadding)
-    printer resetAnsiEscapeColour
-
-  let printTriangleInt printer (f : 'A -> int) (triangle : SingleTriangle<'A>) =
-    let legend = [||]
-    printTriangle printer f intToAsciiChar None legend triangle
-
-  let printTriangleFloat printer (f : 'A -> float) (triangle : SingleTriangle<'A>) =
-    let legend = 
-      getLegendKeyValues floatToAnsiEscapeColour floatToAsciiChar keyValuesForLegend
-      |> Array.ofList
-    printTriangle printer f floatToAsciiChar (Some floatToAnsiEscapeColour) legend triangle
-    
   let printTriangleGrid grid printer (f : 'A -> 'B) (mainPrinter : 'B -> string) (fancyPrinterOpt : ('B -> string) option) (triangle : SingleTriangle<'A>) =
     let grid' = writeTriangleToGrid grid f mainPrinter fancyPrinterOpt triangle
+    printGrid grid' printer
+
+  let printTriangleGridInt grid printer (f : 'A -> int) (triangle : SingleTriangle<'A>) =
+    let grid' = writeTriangleToGrid grid f intToAsciiChar None triangle
     printGrid grid' printer
     
   let printTriangleFloatGrid grid printer (f : 'A -> float) (triangle : SingleTriangle<'A>) =
@@ -243,6 +195,7 @@ module ConsoleFunctions =
     let nc = getNonCanonicalArg args
     let ts =  cs.meshData
     let triangle = ts.triangles.[t]
+    let grid = defaultConsoleGrid ()
     let clusterIdFrom ts' (b : BasicPoint) = 
       let key = b.key 
       let url = keyToUrl ts' t key
@@ -267,9 +220,9 @@ module ConsoleFunctions =
         None
 
     if nc then
-      printTriangle printer (clusterIdFrom_CanonicalOnly ts) intOptToAsciiChar (Some intOptRedIfMissing) Array.empty triangle
+      printTriangleGrid grid printer (clusterIdFrom_CanonicalOnly ts) intOptToAsciiChar (Some intOptRedIfMissing) triangle
     else 
-      printTriangleInt printer (clusterIdFrom ts) triangle
+      printTriangleGridInt grid printer (clusterIdFrom ts) triangle
     [LastTriangle t]
 
   let geoHeightDetails printer lastArgs args gds =
