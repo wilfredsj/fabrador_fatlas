@@ -74,6 +74,7 @@
   //       -82: Re-invent curses-like display for layering
   //       -84: Can't turn off sea level in console triangle plot
   //       -83: Migrate rest of triangle plots to Console Grid (aka Curses-like display)
+  //       -81: Show indices of neighbouring triangles in triangle plot
 
 
   // TODO:
@@ -88,4 +89,3 @@
   //       -64: Console histograms of land mass / sea bodies
   //       -75: Display multiple triangle plots at once
   //       -77: Console is flipped relative to UI, for t=7. Is it in all cases?
-  //       -81: Show indices of neighbouring triangles in triangle plot

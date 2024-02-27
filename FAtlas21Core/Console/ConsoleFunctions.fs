@@ -92,7 +92,6 @@ module ConsoleFunctions =
           let writeRow = row
           let writeCol = np1 - row + 2 * col
 
-
           match fancyPrinterOpt with
           | Some fancyPrinter -> 
             gridWrite writeRow writeCol (mainPrinter v) (Some <| fancyPrinter v) 
@@ -106,15 +105,11 @@ module ConsoleFunctions =
     let grid' = writeTriangleToGrid grid f mainPrinter fancyPrinterOpt triangle
     printGrid grid' printer
 
-  let printTriangleGridInt grid printer (f : 'A -> int) (triangle : SingleTriangle<'A>) =
-    let grid' = writeTriangleToGrid grid f intToAsciiChar None triangle
-    printGrid grid' printer
+  let writeTriangleToGrid_Int grid (f : 'A -> int) (triangle : SingleTriangle<'A>) =
+    writeTriangleToGrid grid f intToAsciiChar None triangle
     
-  let printTriangleFloatGrid grid printer (f : 'A -> float) (triangle : SingleTriangle<'A>) =
-    let grid' = 
-      getLegendKeyValuesGrid grid floatToAnsiEscapeColour floatToAsciiChar keyValuesForLegend
-    let grid'' = writeTriangleToGrid grid' f floatToAsciiChar (Some floatToAnsiEscapeColour) triangle
-    printGrid grid'' printer
+  let writeTriangleToGrid_Float grid (f : 'A -> float) (triangle : SingleTriangle<'A>) =
+    writeTriangleToGrid grid f floatToAsciiChar (Some floatToAnsiEscapeColour) triangle
 
   let printIcosa printer (id : TriangleSet<KeyedPoint<Coordinate>>) =
     printer <| sprintf "IcosaDivision Scale=%i" id.triangles.[0].points.Length
@@ -170,6 +165,12 @@ module ConsoleFunctions =
           Some(t')
         else
           None
+      // case for single letter indicating 10-19
+      | ParseRegex "t=([aAbBcCdDeEfFgGhHiIjJ])" [tx] ->
+        let t = tx.ToLower()
+        let offset = 'a'
+        let t' = (int t.[0] - int offset) + 10
+        Some(t')
       | _ -> None)
     |> Option.defaultValue 0
 
@@ -219,38 +220,76 @@ module ConsoleFunctions =
       else
         None
 
-    if nc then
-      printTriangleGrid grid printer (clusterIdFrom_CanonicalOnly ts) intOptToAsciiChar (Some intOptRedIfMissing) triangle
-    else 
-      printTriangleGridInt grid printer (clusterIdFrom ts) triangle
+    let grid' =
+      if nc then
+        writeTriangleToGrid grid (clusterIdFrom_CanonicalOnly ts) intOptToAsciiChar (Some intOptRedIfMissing) triangle
+      else 
+        writeTriangleToGrid_Int grid (clusterIdFrom ts) triangle
+
+    printGrid grid' printer
     [LastTriangle t]
+
+  let addTriNeighboursToGrid grid ts t i j =
+    let nbrMap = getAllOtherTriangles ts t
+    //   * - - * - - *
+    //    \ a / \ c /
+    //     \ / t \ /
+    //      * - - *
+    //       \ b /
+    //        \ /
+    //         *
+    let a = nbrMap.[OE_BA]
+    let b = nbrMap.[OE_CB]
+    let c = nbrMap.[OE_AC]
+    let writes =
+      [
+        gridWritePlain i j "* - - * - - *";
+        gridWritePlain (i+1) j (sprintf " \\ %s / \\ %s / " (intToAsciiChar a) (intToAsciiChar c));
+        gridWritePlain (i+2) j (sprintf "  \\ / %s \\ /  " (intToAsciiChar t));
+        gridWritePlain (i+3) j "   * - - *   ";
+        gridWritePlain (i+4) j (sprintf "    \\ %s /    " (intToAsciiChar b));
+        gridWritePlain (i+5) j "     \\ /     ";
+        gridWritePlain (i+6) j "      *      "
+        ]
+    writeStringsIntoGrid grid writes
+
+
 
   let geoHeightDetails printer lastArgs args gds =
     let t = getTriangleArg lastArgs args
     let seaLevelOpt = getSeaLevelArg lastArgs args
+    let N = gds.triangleSet.triangles.[t].points.Length
     let grid = defaultConsoleGrid ()
-    match seaLevelOpt with
-    | None ->         
-        printTriangleFloatGrid grid printer (fun p -> 4.0*(p.datum.r-1.0)) gds.triangleSet.triangles.[t]
-    | Some seaLevel ->
-        let f = (fun p -> 
-          if p.datum.r > seaLevel then
-            4.0*(p.datum.r-1.0), true
-          else
-            0.0, false) 
-        let asciiPrinter (f, isLand) = 
-          if isLand then
-            floatToAsciiChar f
-          else
-            "~"
-        let fancyPrinter (f, isLand) = 
-          if isLand then
-            floatToAnsiEscapeColour f
-          else
-            //BLUE escape code:
-            "\x1b[34m"
-        printTriangleGrid grid printer f asciiPrinter (Some fancyPrinter) gds.triangleSet.triangles.[t]
+    let grid' = 
+      match seaLevelOpt with
+      | None ->         
+          writeTriangleToGrid_Float grid (fun p -> 4.0*(p.datum.r-1.0)) gds.triangleSet.triangles.[t]
+      | Some seaLevel ->
+          let f = (fun p -> 
+            if p.datum.r > seaLevel then
+              4.0*(p.datum.r-1.0), true
+            else
+              0.0, false) 
+          let asciiPrinter (f, isLand) = 
+            if isLand then
+              floatToAsciiChar f
+            else
+              "~"
+          let fancyPrinter (f, isLand) = 
+            if isLand then
+              floatToAnsiEscapeColour f
+            else
+              //BLUE escape code:
+              "\x1b[34m"
+          writeTriangleToGrid grid f asciiPrinter (Some fancyPrinter) gds.triangleSet.triangles.[t]
 
+    let grid'' = 
+      getLegendKeyValuesGrid grid' floatToAnsiEscapeColour floatToAsciiChar keyValuesForLegend
+
+    let grid''' =
+      addTriNeighboursToGrid grid'' gds.triangleSet t 0 ((2 * N) - 12)
+
+    printGrid grid''' printer
     [LastTriangle t; LastSeaLevel seaLevelOpt]
 
   let printGeoDivision printer (gds : GeoDivisionState<(char*int) list>) =

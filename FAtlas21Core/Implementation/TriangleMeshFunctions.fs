@@ -748,9 +748,9 @@ module TriangleMeshFunctions =
 
   let addCounterCyclicIntoMap (map : Map<OrientedEdge, 'A>) = 
     map
-    |> Map.add (OE_BA, Map.find OE_AB map)
-    |> Map.add (OE_AC, Map.find OE_CA map)
-    |> Map.add (OE_CB, Map.find OE_BC map)
+    |> Map.add OE_BA (Map.find OE_AB map)
+    |> Map.add OE_AC (Map.find OE_CA map)
+    |> Map.add OE_CB (Map.find OE_BC map)
 
   let getAllOtherTriangles (ts : TriangleSet<'A>) (t : int) = 
     let st = ts.triangles.[t]
