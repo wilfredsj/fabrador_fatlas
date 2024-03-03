@@ -8,6 +8,7 @@ module ConsoleStrings =
         "info", Print
         "stats", Stats
         "details", Details
+        "plot", Plot
         "help", AHelp ]
       |> Map.ofList
 

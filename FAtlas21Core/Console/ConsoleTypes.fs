@@ -6,6 +6,7 @@ module ConsoleTypes =
   | Stats
   | Details
   | AHelp
+  | Plot
 
   type ConsoleTarget = 
   | State
@@ -43,5 +44,5 @@ module ConsoleTypes =
   let gridWritePlain row col str = { row = row; col = col; str = str; escapeString = None }
   let gridWrite row col str escapeString = { row = row; col = col; str = str; escapeString = escapeString }
 
-  let defaultConsoleGrid () = { lines = Array.empty; width = 80 }
+  let defaultConsoleGrid () = { lines = Array.empty; width = 160 }
   

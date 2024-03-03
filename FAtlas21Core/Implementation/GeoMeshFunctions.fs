@@ -22,6 +22,9 @@ module GeoMeshFunctions =
   let actualCartFloored gmd =
     cartFromSphereWithRadius (max gmd.r 1.0) gmd.location
 
+  let getGeoScale (geoConstants : GeoConstants) (singleTriangle : SingleTriangle<'A>) = 
+    geoConstants.radiusAtEquator / 0.756 / float(singleTriangle.scale)
+
   let convertOnePoint correlatedSampler param (td : TectonicData<'A>) scale url (point : KeyedPoint<Coordinate>) =
     let c =
       td.cca.clusterAssignments

@@ -167,6 +167,7 @@ module TectonicTypes =
   type TectonicCluster = {
     cluster : CompleteClusterDatum
     heightBias : float
+    // unitVelocity is a Euclidean targent vector
     unitVelocity : Cartesian
     velocityMagnitude: float
     stressNeighboursSorted : (GeoClusterBoundary*GeoClusterBoundary) array

@@ -15,7 +15,8 @@ module AtlasConsoleView =
   let actionTargetCombinations = Map.ofList [
     Print, [State; Tectonics; GeoMesh]
     Stats, [State; Tectonics; GeoMesh; Cluster]
-    Details, [Cluster; GeoMesh]
+    Plot, [Cluster; GeoMesh]
+    Details, [Tectonics; GeoMesh]
     ] 
 
   let printTargetsFor printer action =
@@ -73,25 +74,25 @@ module AtlasConsoleView =
       printer "Stats not supported for this target"
     state, []
 
-  let consoleDetails printer state (cc : ConsoleCommandTyped) = 
+  let consolePlot printer state (cc : ConsoleCommandTyped) = 
     let lastArgs = 
       state.consoleCache.cachedArgs
     let argsUsed = 
       match cc.target with
       | Cluster ->
         match tryExtractCompleteClusterData state.model with
-        | Some cs -> clusterDetails printer lastArgs cc.args cs
+        | Some cs -> plotClusterDetails printer lastArgs cc.args cs
         | None -> 
           printer "No Cluster"
           []
       | GeoMesh ->
         match tryExtractGeoMesh state.model with
-        | Some gds -> geoHeightDetails printer lastArgs cc.args gds
+        | Some gds -> plotGeoHeightDetails printer lastArgs cc.args gds
         | None -> 
           printer "No GeoMesh"
           []
       | THelp -> 
-        printTargetsFor printer Details
+        printTargetsFor printer Plot
         []
       | _ ->
         printer "Details not supported for this target"
@@ -102,14 +103,40 @@ module AtlasConsoleView =
     printer "Available Commands:"
     uniqueActions |> Seq.iter (fun a -> printer a)
     state, []
-      
+
+  let consoleDetails printer state cc =
+    let lastArgs = 
+      state.consoleCache.cachedArgs
+    let argsUsed = 
+      match cc.target with
+      | GeoMesh ->
+        match tryExtractGeoMesh state.model with
+        | Some gds -> geoHeightDetails printer lastArgs cc.args gds
+        | None -> 
+          printer "No GeoMesh"
+          []
+      | Tectonics -> 
+        match tryExtractTectonicData state.model with
+        | Some tec -> tectonicDetails printer lastArgs cc.args tec
+        | None -> 
+          printer "No Tectonics"
+          []
+      | THelp -> 
+        printTargetsFor printer Details
+        []
+      | _ ->
+        printer "Details not supported for this target"
+        []
+    state, argsUsed
+
   let processConsoleCommand printer state (cc : ConsoleCommandTyped) = 
     let (newState, argsUsed) = 
       match cc.action with
       | Print -> consolePrint printer state cc
       | Stats -> consoleStats printer state cc
-      | Details -> consoleDetails printer state cc
+      | Plot -> consolePlot printer state cc
       | AHelp -> consoleHelp printer state cc
+      | Details -> consoleDetails printer state cc
       
     let args' = mergeCachedArgs state.consoleCache.cachedArgs argsUsed
     { newState with consoleCache = { newState.consoleCache with lastConsoleCommand = Some cc; cachedArgs = args'} }

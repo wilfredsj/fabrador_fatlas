@@ -8,6 +8,8 @@ open TriangleMeshFunctions
 open UtilTypes
 open ConsoleTypes
 open ConsoleGridFunctions
+open GeoMeshFunctions
+open CoordFunctions
 
 module ConsoleFunctions =
 
@@ -139,6 +141,22 @@ module ConsoleFunctions =
         | LastSeaLevel fOpt -> fOpt
         | _ -> None))
 
+  let getClusterIdArg (lastArgs : CachedArg list) args =
+    args 
+    |> List.tryPick(fun s -> 
+      match s with
+      | ParseRegex "c=([0-9]+)" [c] -> 
+        let c' = int c
+        Some(c')
+      // case for single letter indicating 10-19
+      | ParseRegex "c=([\w])" [cx] ->
+        let c = cx.ToLower()
+        let offset = 'a'
+        let c' = (int c.[0] - int offset) + 10
+        Some(c')
+      | _ -> None)
+    |> Option.defaultValue 0
+
   let getTriangleArg (lastArgs : CachedArg list) args =
     args 
     |> List.tryPick(fun s -> 
@@ -155,7 +173,7 @@ module ConsoleFunctions =
           |> List.tryPick(fun s ->
             match s with
             | LastTriangle i -> Some i
-            | _ -> None) 
+            | _ -> None)
           |> Option.defaultValue 0
         Some((last + offset) % 20)
       | ParseRegex "t=([0-9]+)" [t] -> 
@@ -191,7 +209,7 @@ module ConsoleFunctions =
       | _ -> None)
     |> Option.defaultValue false
 
-  let clusterDetails printer lastArgs args (cs : CompleteClusterAssignment<'A>) =
+  let plotClusterDetails printer lastArgs args (cs : CompleteClusterAssignment<'A>) =
     let t = getTriangleArg lastArgs args
     let nc = getNonCanonicalArg args
     let ts =  cs.meshData
@@ -253,9 +271,16 @@ module ConsoleFunctions =
         ]
     writeStringsIntoGrid grid writes
 
-
-
   let geoHeightDetails printer lastArgs args gds =
+    let t = getTriangleArg lastArgs args
+    let seaLevelOpt = getSeaLevelArg lastArgs args
+    let scale = getGeoScale (defaultGeoConstants) gds.triangleSet.triangles.[t]
+    printer <| sprintf "t=%i" t
+    printer <| sprintf "scale (m) = %.1f" scale
+    [LastTriangle t; LastSeaLevel seaLevelOpt] 
+    
+
+  let plotGeoHeightDetails printer lastArgs args gds =
     let t = getTriangleArg lastArgs args
     let seaLevelOpt = getSeaLevelArg lastArgs args
     let N = gds.triangleSet.triangles.[t].points.Length
@@ -282,7 +307,6 @@ module ConsoleFunctions =
               //BLUE escape code:
               "\x1b[34m"
           writeTriangleToGrid grid f asciiPrinter (Some fancyPrinter) gds.triangleSet.triangles.[t]
-
     let grid'' = 
       getLegendKeyValuesGrid grid' floatToAnsiEscapeColour floatToAsciiChar keyValuesForLegend
 
@@ -383,6 +407,19 @@ module ConsoleFunctions =
       |> Array.map (fun (a,b) -> a.form)
 
     printHistogramDiscrete printer allForms
+
+  let tectonicDetails printer lastArgs args (tec : TectonicData<(char*int) list>) =
+    let c = getClusterIdArg lastArgs args
+    let thisPlate = tec.plates.[c-1]
+    let thisCluster = thisPlate.cluster
+    let (dref, dref2) = prepareBearing thisCluster.orderedBorder.hub thisCluster.orderedBorder.ref
+    let velocityBearing = bearing thisCluster.orderedBorder.hub dref dref2 thisPlate.unitVelocity
+    printer <| sprintf "Plate ID %i" c
+    printer <| sprintf "HeightBias %.2f" thisPlate.heightBias
+    printer <| sprintf "Velocity %.3f, bearing %.3f" thisPlate.velocityMagnitude velocityBearing
+    printer <| "    NBId   | NB_HB  | Stress  | Bearing | Form"
+    thisPlate.stressNeighboursSorted |> Array.iter (fun (a,b) -> printer <| sprintf "    %-2i (%s) | %6.3f |  %6.3f | %5.3f   | %A" a.oppositeId (intToAsciiChar a.oppositeId) a.oppositeMidBias a.stress a.thisBearing a.form)
+    []
 
 
   let clusterStats printer (cca : CompleteClusterAssignment<(char*int) list>) =

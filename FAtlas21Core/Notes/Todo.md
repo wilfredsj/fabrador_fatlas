@@ -75,6 +75,8 @@
   //       -84: Can't turn off sea level in console triangle plot
   //       -83: Migrate rest of triangle plots to Console Grid (aka Curses-like display)
   //       -81: Show indices of neighbouring triangles in triangle plot
+  //       -85: Add a layer with scale-related information
+  //       -86: Add ability to query cluster velocity and stress profile from console (debug t=6 on seed 10101)
 
 
   // TODO:
@@ -88,4 +90,7 @@
   //       -63: Console histograms of geomesh feature
   //       -64: Console histograms of land mass / sea bodies
   //       -75: Display multiple triangle plots at once
-  //       -77: Console is flipped relative to UI, for t=7. Is it in all cases?
+
+  
+  //  NOT DOING:
+  //       -77: Console is flipped relative to UI, for t=7. Is it in all cases? Not certain this is important
