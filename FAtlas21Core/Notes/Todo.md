@@ -76,7 +76,8 @@
   //       -83: Migrate rest of triangle plots to Console Grid (aka Curses-like display)
   //       -81: Show indices of neighbouring triangles in triangle plot
   //       -85: Add a layer with scale-related information
-  //       -86: Add ability to query cluster velocity and stress profile from console (debug t=6 on seed 10101)
+  //       -86: Add ability to query cluster velocity and stress profile from console (debug t=6 on seed 10101) (Note - is interaction between cluster ID 'M' and 'G' with PeakAtSide stress function)
+
 
 
   // TODO:
@@ -90,6 +91,10 @@
   //       -63: Console histograms of geomesh feature
   //       -64: Console histograms of land mass / sea bodies
   //       -75: Display multiple triangle plots at once
+  //       -87: Plot heightbias as function between centroids of two clusters (e.g. M / G on seed=10101)
+  //       -88: Plot actual height as function between centroids of two clusters (e.g. M / G on seed=10101)
+  //       -89: Something strange with 'radius' interpolation on seed=10101 + { x = 0.5633320074, y = 0.2323790856, z = 0.6209747922 } clusterid=6
+
 
   
   //  NOT DOING:

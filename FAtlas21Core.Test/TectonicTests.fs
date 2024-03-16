@@ -11,6 +11,7 @@ open FAtlas.TriangleMeshFunctions
 open FAtlas.CoordFunctions
 open FAtlas.AtlasViewFunctions
 open FAtlas.TriangleMeshTypes
+open FAtlas.TriangleTypes
 
 let createSetupIcosahedron n =    
   let data = createIcosahedron()
@@ -25,11 +26,14 @@ let emptyCallback = { makeVertex = (fun x -> 1);
                     onUpdateCallback = (fun x -> ()); 
                     uiCallbackOpt = None }
 
-let myInit seed =
+let myInit geoMesh seed =
   let ms = initState emptyCallback
-  let initScript = [ReSeed seed; Divide 4; ClusterInit None; ClusterIterate 5000] 
+  let initScript = 
+    [ReSeed seed; Divide 4; ClusterInit None; ClusterIterate 5000] @ if(geoMesh) then [AssignTectonics; InitGeoMesh false; Divide 2] else []
   let model' = initScript |> List.fold updateModel ms
   model'
+
+
 
 let rec sprintWithin (accIn : string list) ts lookup clusterId n url =
   if n <= 0 then
@@ -85,7 +89,7 @@ let debugCreateBorder (clusterdata : CompleteClusterAssignment<'A>) c =
 // AETHER-31
 [<Test>]
 let TestBorder() =
-  let problemCase = myInit 1138
+  let problemCase = myInit false 1138
   let clusterData = extractCompleteClusterData problemCase.model
   let allRegisteredAsEdges = clusterData.connections |> List.collect(fun pair -> [fst pair; snd pair])
   // Just to check if this is base-0 or base-1
@@ -112,3 +116,39 @@ let TestBorder() =
   let test = debugCreateBorder clusterData clusterData.allClusters.[9]
 
   Assert.AreEqual(Array.length bad, 0)
+
+// AETHER-89
+[<Test>]
+let TestRadiusFunction () =
+  let problemCase = myInit true 10101
+  let clusterData = extractCompleteClusterData problemCase.model
+
+  let clusterToCheck = clusterData.allClusters |> Array.find(fun c -> c.id = 6)
+
+  let problemPoint = cart 0.5633320074 0.2323790856 0.6209747922
+
+  let radiusFunction = getLocalCoordinates clusterToCheck.orderedBorder
+
+  let actualBorderLength =
+    clusterToCheck.orderedBorder.pts
+    |> pairwiseWithCyclic None
+    |> List.fold (fun acc (p1, p2) -> acc + modulus (polar p1.radius p1.argument - polar p2.radius p2.argument)) 0.0
+
+  let normalizedBorderLength =
+    clusterToCheck.orderedBorder.normalizedBoundary
+    |> Array.fold (fun acc (th,(r,nbs)) -> acc + modulus (polar nbs.y_lower nbs.x_upper - polar nbs.y_upper nbs.x_lower)) 0.0
+
+  let print = false
+  if print then
+    printfn "ai,aj,at,mx,my,mz,,,bi,bj,bt, th,r"
+    clusterToCheck.orderedBorder.pts
+    |> List.iter(fun p -> printfn "%i,%i,%i,%-.5f,%-.5f,%-.5f,,,%i,%i,%i,,%-.3f,%-.3f" p.inUrl.i p.inUrl.j p.inUrl.t p.pt.x p.pt.y p.pt.z p.outUrl.i p.outUrl.j p.outUrl.t p.argument p.radius)
+  
+    printfn "th,r,,th_l,r_l,,th_u,r_u,,dxdy"
+    clusterToCheck.orderedBorder.normalizedBoundary
+    |> Array.iter(fun (th,(r, ob)) -> printfn "%-.3f,%-.3f,,%-.3f,%-.3f,,%-.3f,%-.3f,,%-.3f" th r ob.x_lower ob.y_lower ob.y_lower ob.y_upper ob.dy_dx)
+
+    
+  Assert.AreEqual(actualBorderLength, normalizedBorderLength, 0.1 * actualBorderLength)
+
+

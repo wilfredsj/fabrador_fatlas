@@ -9,6 +9,8 @@ module CoordFunctions =
 
   let cart x y z = { x = x; y = y; z = z}
 
+  let polar r th = { x = r * System.Math.Cos th; y = r * System.Math.Sin th; z = 0.0}
+
   let cartToString8f c = 
     sprintf "%.8f\t%.8f\t%.8f" c.x c.y c.z
 

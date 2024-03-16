@@ -221,17 +221,34 @@ module TectonicFunctions =
       |> pairwiseWithCyclic_Reversed None
       |> List.map(fun (x,y) -> (x.argument, y.argument))
 
-    let normBoundary = 
+
+    // Not sure what the assertion is here
+    //  'points' is in the order from traversing the border
+
+    // makeNBS_LR asserts (l.argument < r.argument)
+
+    // In typical cases we see ordering like
+    //   0.02, 2 pi, 2pi - eps, 2pi - 2eps , ...    , 0.02 + eps
+
+    // Later functions that use the boundary expect the property that for some small k, the extreme values are [k, 2pi + k]
+
+    let normBoundary' = 
       points
       |> pairwiseWithCyclic_Reversed None
       |> List.map( 
         fun (big,small) ->
-          let big' =
-            if small.argument <= big.argument then
-              big
+          if small.argument <= big.argument then
+            if big.argument - small.argument < System.Math.PI then
+              makeNBS_LR small big
             else
-              { argument = big.argument + (2.0 * System.Math.PI); pt = big.pt; inUrl=big.inUrl; outUrl = big.outUrl; radius = big.radius }
-          makeNBS_LR small big')
+              makeNBS_RL { argument = small.argument + (2.0 * System.Math.PI); pt = small.pt; inUrl=small.inUrl; outUrl = small.outUrl; radius = small.radius } big
+          else
+            if small.argument - System.Math.PI < big.argument then
+              makeNBS_RL small big
+            else
+              makeNBS_LR small { argument = big.argument + (2.0 * System.Math.PI); pt = big.pt; inUrl=big.inUrl; outUrl = big.outUrl; radius = big.radius })
+    let normBoundary = 
+      normBoundary'
       |> List.collect(fun nbs -> 
         if nbs.x_lower < 0.0 then
           splitAtZero nbs
@@ -854,8 +871,7 @@ module TectonicFunctions =
     
   let interpolateFromBoundary(tec : TectonicCluster) g f cart =
     
-    let (dref, dref2) = prepareBearing tec.cluster.orderedBorder.hub tec.cluster.orderedBorder.ref
-    let (r,th) = getLocalCoordinates' dref dref2 tec.cluster.orderedBorder cart
+    let (r,th) = getLocalCoordinates tec.cluster.orderedBorder cart
     let (th', (lowerNbr, upperNbr)) = lookupGeoBoundary tec.stressNeighboursSorted th
     if th' > upperNbr.thisBearing then
       failwith "Bad normalization"

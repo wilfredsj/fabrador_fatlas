@@ -55,7 +55,7 @@ module Interface =
       match state.model with
       | ClusterFinished _ -> true
       | TectonicAssigned _ -> true
-      | GeoDivision _
+      | GeoDivision _ -> true
       | _ -> false
     | IcosaView (TectonicStressColours _)
     | IcosaView (TectonicHeightBiasColours _)

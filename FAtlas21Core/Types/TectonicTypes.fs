@@ -33,11 +33,11 @@ module TectonicTypes =
   //       to outUrl
   //     pt is the cartesian location of the midpoint.
   type ClusterBoundaryPoint = { 
+    argument : float 
+    radius : float; 
     pt : Cartesian; 
     inUrl : VertexUrl; 
     outUrl : VertexUrl; 
-    radius : float; 
-    argument : float 
   }
   let bpStr bp = sprintf "In: %s | Out: %s R=%f Th=%f" (vtxStr bp.inUrl) (vtxStr bp.outUrl) bp.radius bp.argument
 
@@ -54,6 +54,12 @@ module TectonicTypes =
     { x_lower = xl; x_upper = xu; y_lower = yl; y_upper = yu; dy_dx = dy / dx}
     
   let makeNBS_LR l r =
+    if l.argument > r.argument then
+      failwith <| sprintf "Bad normalization, left=%A right=%A" l r
+    else
+      makeNBS l.argument r.argument l.radius r.radius
+
+  let makeNBS_RL r l =
     if l.argument > r.argument then
       failwith <| sprintf "Bad normalization, left=%A right=%A" l r
     else
