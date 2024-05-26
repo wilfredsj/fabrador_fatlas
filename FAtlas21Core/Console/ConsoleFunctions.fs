@@ -332,6 +332,7 @@ module ConsoleFunctions =
 
     let fromCluster = gds.tectData.plates.[fromClusterId - 1]
     let toCluster = gds.tectData.plates.[toClusterId - 1]
+    
 
     let foundCluster = fromCluster.stressNeighboursSorted |> Array.exists(fun (lb, _) -> lb.oppositeId = toClusterId)
 
@@ -345,13 +346,23 @@ module ConsoleFunctions =
     else
       let fromCentroid = fromCluster.cluster.orderedBorder.hub
       let toCentroid = toCluster.cluster.orderedBorder.hub
-      fromCluster.cluster.orderedBorder.pts
-      let dX = (toCentroid - fromCentroid) / float N
+      let borderPoints = 
+        gds.tectData.cca.connections 
+        |> List.filter(fun (c1, c2) -> fst c1 = fromClusterId && fst c2 = toClusterId)
+        |> List.collect(fun (c1, c2) -> [snd c1; snd c2])
+        |> List.map (urlToCartesian gds.tectData.cca.meshData 1.0)
+      let borderCentroid = centroid borderPoints
+      let n2 = N/2
+      let dX1 = (borderCentroid - fromCentroid) / float n2
+      let dX2 = (toCentroid - borderCentroid) / float n2
 
-      let points = 
-        [0 .. N]
-        |> List.map(fun i -> fromCentroid + (dX * (float i)))
-    
+      let points1 = 
+        [0 .. n2]
+        |> List.map(fun i -> fromCentroid + (dX1 * (float i)))
+      let points2 = 
+        [0 .. n2]
+        |> List.map(fun i -> borderCentroid + (dX2 * (float i)))
+      let points = points1 @ points2 
       let heightBiasVec = 
         points
         |> List.mapi(fun i p -> 
@@ -508,16 +519,20 @@ module ConsoleFunctions =
 
   let tectonicDetails printer lastArgs args (tec : TectonicData<(char*int) list>) =
     let c = getClusterIdArg lastArgs args
-    let thisPlate = tec.plates.[c-1]
-    let thisCluster = thisPlate.cluster
-    let (dref, dref2) = prepareBearing thisCluster.orderedBorder.hub thisCluster.orderedBorder.ref
-    let velocityBearing = bearing thisCluster.orderedBorder.hub dref dref2 thisPlate.unitVelocity
-    printer <| sprintf "Plate ID %i" c
-    printer <| sprintf "HeightBias %.2f" thisPlate.heightBias
-    printer <| sprintf "Velocity %.3f, bearing %.3f" thisPlate.velocityMagnitude velocityBearing
-    printer <| "    NBId   | NB_HB  | Stress  | Bearing | Form"
-    thisPlate.stressNeighboursSorted |> Array.iter (fun (a,b) -> printer <| sprintf "    %-2i (%s) | %6.3f |  %6.3f | %5.3f   | %A" a.oppositeId (intToAsciiChar a.oppositeId) a.oppositeMidBias a.stress a.thisBearing a.form)
-    []
+    if c < 1 || c > tec.plates.Length then
+      printer <| sprintf "Invalid Plate ID %i. [c=]" c
+      []
+    else
+      let thisPlate = tec.plates.[c-1]
+      let thisCluster = thisPlate.cluster
+      let (dref, dref2) = prepareBearing thisCluster.orderedBorder.hub thisCluster.orderedBorder.ref
+      let velocityBearing = bearing thisCluster.orderedBorder.hub dref dref2 thisPlate.unitVelocity
+      printer <| sprintf "Plate ID %i" c
+      printer <| sprintf "HeightBias %.2f" thisPlate.heightBias
+      printer <| sprintf "Velocity %.3f, bearing %.3f" thisPlate.velocityMagnitude velocityBearing
+      printer <| "    NBId   | NB_HB  | Stress  | Bearing | Form"
+      thisPlate.stressNeighboursSorted |> Array.iter (fun (a,b) -> printer <| sprintf "    %-2i (%s) | %6.3f |  %6.3f | %5.3f   | %A" a.oppositeId (intToAsciiChar a.oppositeId) a.oppositeMidBias a.stress a.thisBearing a.form)
+      []
 
 
   let clusterStats printer (cca : CompleteClusterAssignment<(char*int) list>) =
