@@ -596,6 +596,15 @@ module TectonicFunctions =
     else 
       (r / r_actual, th)
 
+
+  // This is literally (r,th) in polar coordinates sense
+  let getUniformLocalCordinates cluster localPoint =
+    let (dref, dref2) = prepareBearing cluster.hub cluster.ref
+    let th = bearing cluster.hub dref dref2 localPoint
+    let r = modulus (localPoint - cluster.hub)
+    (r, th)
+
+  // This has (r,th) from polar coordinates then adjusted to r' = r / radius_local(th) 
   let getLocalCoordinates cluster localPoint =
     let (dref, dref2) = prepareBearing cluster.hub cluster.ref
     getLocalCoordinates' dref dref2 cluster localPoint

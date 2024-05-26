@@ -10,6 +10,7 @@ open ConsoleTypes
 open ConsoleGridFunctions
 open GeoMeshFunctions
 open CoordFunctions
+open TectonicFunctions
 
 module ConsoleFunctions =
 
@@ -80,6 +81,24 @@ module ConsoleFunctions =
     else
       chars.[f'] |> string
 
+  let writeVerticalAsciiColumnToGrid zeroRow (maxRows : int) col (f : float) =
+    
+    let (scaledF, dir) = 
+      if(f > 0) then
+        (f * float maxRows, -1)
+      else 
+        (-f * float maxRows, 1)
+    [0..maxRows]
+    |> List.map(fun zbRow -> 
+      if zbRow = 0 then
+        gridWritePlain zeroRow col "="
+      else
+        let row = zbRow - 1
+        let v = min (scaledF - float row) 1.0
+        let writeRow = zeroRow + (zbRow * dir)
+        gridWritePlain writeRow col (floatToAsciiChar v)
+    )
+
   let writeTriangleToGrid grid (f : 'A -> 'B) (mainPrinter : 'B -> string) (fancyPrinterOpt : ('B -> string) option) (triangle : SingleTriangle<'A>) =
     let np1 = triangle.points.[0].Length
     let writes =
@@ -148,7 +167,7 @@ module ConsoleFunctions =
       | ParseRegex "c=([0-9]+)" [c] -> 
         let c' = int c
         Some(c')
-      // case for single letter indicating 10-19
+      // case for single char from A=10
       | ParseRegex "c=([\w])" [cx] ->
         let c = cx.ToLower()
         let offset = 'a'
@@ -156,6 +175,30 @@ module ConsoleFunctions =
         Some(c')
       | _ -> None)
     |> Option.defaultValue 0
+
+  let singleCharArg argName defaultValue args =
+    args 
+    |> List.tryPick(fun s -> 
+      match s with
+      | ParseRegex (sprintf "%s=([0-9]+)" argName) [f] -> 
+        let f' = int f
+        Some(f')
+      | ParseRegex (sprintf "%s=([\w])" argName) [cx] ->
+        let c = cx.ToLower()
+        let offset = 'a'
+        let c' = (int c.[0] - int offset) + 10
+        Some(c')
+      | _ -> None)
+    |> Option.defaultValue defaultValue
+
+  let getFromClusterIdArg (lastArgs : CachedArg list) args =
+    singleCharArg "fc" 1 args
+
+  let getToClusterIdArg (lastArgs : CachedArg list) args =
+    singleCharArg "tc" 1 args
+        
+  let getCountArg (lastArgs : CachedArg list) args =
+    singleCharArg "n" 20 args
 
   let getTriangleArg (lastArgs : CachedArg list) args =
     args 
@@ -278,7 +321,62 @@ module ConsoleFunctions =
     printer <| sprintf "t=%i" t
     printer <| sprintf "scale (m) = %.1f" scale
     [LastTriangle t; LastSeaLevel seaLevelOpt] 
+   
+
+  let plotTectonicPairs printer lastArgs args (gds : GeoDivisionState<'A>) = 
+    let fromClusterId = getFromClusterIdArg lastArgs args
+    let toClusterId = getToClusterIdArg lastArgs args
+    let N = getCountArg lastArgs args
+
+
+
+    let fromCluster = gds.tectData.plates.[fromClusterId - 1]
+    let toCluster = gds.tectData.plates.[toClusterId - 1]
+
+    let foundCluster = fromCluster.stressNeighboursSorted |> Array.exists(fun (lb, _) -> lb.oppositeId = toClusterId)
+
+    if toClusterId = fromClusterId then
+      printer <| sprintf "From (%i) and to (%i) cluster are the same" fromClusterId toClusterId
+      []
+    else if not foundCluster then
+      printer <| sprintf "No neighbour (%i) found of %i" toClusterId fromClusterId 
+      printer <| sprintf "  Neighbours: %A" (fromCluster.stressNeighboursSorted |> Array.map(fun (lb, _) -> lb.oppositeId) |> Array.toList)
+      []
+    else
+      let fromCentroid = fromCluster.cluster.orderedBorder.hub
+      let toCentroid = toCluster.cluster.orderedBorder.hub
+      fromCluster.cluster.orderedBorder.pts
+      let dX = (toCentroid - fromCentroid) / float N
+
+      let points = 
+        [0 .. N]
+        |> List.map(fun i -> fromCentroid + (dX * (float i)))
     
+      let heightBiasVec = 
+        points
+        |> List.mapi(fun i p -> 
+          // getStressedHeightBias
+          let (fromHB, fromRadius) = getLinearHeightBias fromCluster p
+          let (toHB, toRadius) = getLinearHeightBias toCluster p
+          if fromRadius < toRadius then (fromHB, (fromRadius, false)) else (toHB, (toRadius, true)))
+
+
+      printer <| sprintf "From: %i, To: %i" fromClusterId toClusterId
+      let x = getStressedHeightBias toCluster points.[12]
+      heightBiasVec |> List.iteri(fun i (hb,(r,b)) -> 
+        printer <| sprintf "  %-2i: %-3.3f    %-3.3f  %A" i hb r b)
+
+      let grid = defaultConsoleGrid ()
+
+      let writes = 
+        heightBiasVec 
+        |> List.indexed
+        |> List.collect(fun (i,(hb,_)) -> writeVerticalAsciiColumnToGrid 10 8 (2*i+3) hb)
+
+      let grid' = writeStringsIntoGrid grid writes
+      printGrid grid' printer
+      []
+
 
   let plotGeoHeightDetails printer lastArgs args gds =
     let t = getTriangleArg lastArgs args

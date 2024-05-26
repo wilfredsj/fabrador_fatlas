@@ -91,6 +91,12 @@ module AtlasConsoleView =
         | None -> 
           printer "No GeoMesh"
           []
+      | Tectonics ->
+        match tryExtractGeoMesh state.model with
+        | Some gds -> plotTectonicPairs printer lastArgs cc.args gds
+        | _ -> 
+          printer "No GeoMesh"
+          []
       | THelp -> 
         printTargetsFor printer Plot
         []

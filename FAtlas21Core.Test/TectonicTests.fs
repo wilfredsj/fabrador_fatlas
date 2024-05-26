@@ -29,7 +29,7 @@ let emptyCallback = { makeVertex = (fun x -> 1);
 let myInit geoMesh seed =
   let ms = initState emptyCallback
   let initScript = 
-    [ReSeed seed; Divide 4; ClusterInit None; ClusterIterate 5000] @ if(geoMesh) then [AssignTectonics; InitGeoMesh false; Divide 2] else []
+    [NoOp; ReSeed seed; Divide 4; ClusterInit None; ClusterIterate 5000] @ if(geoMesh) then [AssignTectonics; InitGeoMesh false; Divide 2] else []
   let model' = initScript |> List.fold updateModel ms
   model'
 
@@ -125,8 +125,6 @@ let TestRadiusFunction () =
 
   let clusterToCheck = clusterData.allClusters |> Array.find(fun c -> c.id = 6)
 
-  let problemPoint = cart 0.5633320074 0.2323790856 0.6209747922
-
   let radiusFunction = getLocalCoordinates clusterToCheck.orderedBorder
 
   let actualBorderLength =
@@ -151,4 +149,78 @@ let TestRadiusFunction () =
     
   Assert.AreEqual(actualBorderLength, normalizedBorderLength, 0.1 * actualBorderLength)
 
+
+  
+// AETHER-90
+// Turned out to be non-issue once random seed was corrected. Test kept for future reference.
+[<Test>]
+let TestRadiusPairFunction () =
+  let problemCase = myInit true 10101
+  let clusterData = extractCompleteClusterData problemCase.model
+  let tectData = extractTectonicData problemCase.model
+  let tectFrom = tectData.plates |> Array.find(fun c -> c.cluster.id = 6)
+  let tectTo = tectData.plates |> Array.find(fun c -> c.cluster.id = 22)
+
+  let clusterTo = tectTo.cluster
+  let clusterFrom = tectFrom.cluster
+
+  let radiusFunctionTo = getLocalCoordinates clusterTo.orderedBorder
+  let radiusFunctionFrom = getLocalCoordinates clusterFrom.orderedBorder
+
+  let centerTo = clusterTo.orderedBorder.hub
+  let centerFrom = clusterFrom.orderedBorder.hub
+
+  let dx = centerTo - centerFrom
+
+  let N = 20
+
+  let points = 
+    [| 0 .. N |] 
+    |> Array.map(fun i -> centerFrom + dx * (float i / float N) )
+
+  let midPoint = centerFrom + dx * 0.5
+
+  
+  let mid_local_to = radiusFunctionTo midPoint
+  let mid_local_from = radiusFunctionFrom midPoint
+  let midUnif_to= getUniformLocalCordinates clusterTo.orderedBorder midPoint
+  let midUnif_from = getUniformLocalCordinates clusterFrom.orderedBorder midPoint
+  let mid_heightBias_to= getLinearHeightBias tectTo midPoint
+  let mid_heightBias_from = getLinearHeightBias tectFrom midPoint
+
+  let pointsWithRadiusAndHB =
+    points
+    |> Array.map(fun p -> 
+      let rth1 = radiusFunctionTo p
+      let rth2 = radiusFunctionFrom p
+      let rth1_unif = getUniformLocalCordinates clusterTo.orderedBorder p
+      let rth2_unif = getUniformLocalCordinates clusterFrom.orderedBorder p
+      let hb1 = getLinearHeightBias tectTo p
+      let hb2 = getLinearHeightBias tectFrom p
+      (rth1, rth2, rth1_unif, rth2_unif, hb1, hb2, p))
+
+  let relevantBorderSection_to = lookupBoundary clusterTo.orderedBorder.normalizedBoundary (snd mid_local_to)
+  let relevantBorderSection_from = lookupBoundary clusterFrom.orderedBorder.normalizedBoundary (snd mid_local_from)
+
+  let closestBorder_to = clusterTo.orderedBorder.pts |> List.minBy(fun p -> modulus (p.pt - midPoint))
+  let closestBorder_from = clusterFrom.orderedBorder.pts |> List.minBy(fun p -> modulus (p.pt - midPoint))
+
+  
+  
+  let print = true
+  if print then
+    printfn "c,ai,aj,at,mx,my,mz,,,bi,bj,bt, th,r"
+    clusterTo.orderedBorder.pts
+    |> List.iter(fun p -> printfn "t,%i,%i,%i,%-.5f,%-.5f,%-.5f,,,%i,%i,%i,,%-.3f,%-.3f" p.inUrl.i p.inUrl.j p.inUrl.t p.pt.x p.pt.y p.pt.z p.outUrl.i p.outUrl.j p.outUrl.t p.argument p.radius)
+    
+    clusterFrom.orderedBorder.pts
+    |> List.iter(fun p -> printfn "f,%i,%i,%i,%-.5f,%-.5f,%-.5f,,,%i,%i,%i,,%-.3f,%-.3f" p.inUrl.i p.inUrl.j p.inUrl.t p.pt.x p.pt.y p.pt.z p.outUrl.i p.outUrl.j p.outUrl.t p.argument p.radius)
+    
+    printfn "mf,,,,%-.5f,%-.5f,%-.5f" centerFrom.x centerFrom.y centerFrom.z
+    printfn "m,,,,%-.5f,%-.5f,%-.5f" midPoint.x midPoint.y midPoint.z
+    printfn "mt,,,,%-.5f,%-.5f,%-.5f" centerTo.x centerTo.y centerTo.z
+  
+
+
+  Assert.AreEqual(2, 2)
 
